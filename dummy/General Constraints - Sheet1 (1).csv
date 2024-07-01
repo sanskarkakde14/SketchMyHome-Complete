@@ -1,0 +1,150 @@
+SpaceName,SpaceType,LayerName,Dimension Type,Min Dim,Max Dim,Vehicles,Beds,Dining Table ,Door,Windows,Chair ,Sofas/Couch,Table,Sanitary Fixtures,Plants,Storage Cupboard,Kitchen Appliances ,Vastu 1st Preference ,Vastu 2nd Preference ,Vastu 3r Preference ,Vastu 4th Preference 
+Master Bedroom ,Primary ,BedRoom1,Length,10,18,0,1,0,1,1,2,2,2,0,2,1,0,SouthWest,South,West,-
+Master Bedroom ,Primary ,BedRoom1,Width,10,25,0,1,0,1,1,2,2,2,0,2,1,0,SouthWest,South,West,-
+Master Bedroom ,Primary ,BedRoom1,Area,100,450,0,1,0,1,1,2,2,2,0,2,1,0,SouthWest,South,West,-
+Master Bedroom ,Primary ,BedRoom1,Height,9,11,0,1,0,1,1,2,2,2,0,2,1,0,SouthWest,South,West,-
+Bedroom,Primary ,BedRoom2,Length,10,18,0,1,0,1,1,2,2,2,0,2,1,0,SouthWest,South,West,-
+Bedroom,Primary ,BedRoom2,Width,10,20,0,1,0,1,1,2,2,2,0,2,1,0,SouthWest,South,West,-
+Bedroom,Primary ,BedRoom2,Area,100,360,0,1,0,1,1,2,2,2,0,2,1,0,SouthWest,South,West,-
+Bedroom,Primary ,BedRoom2,Height,9,11,0,1,0,1,1,2,2,2,0,2,1,0,SouthWest,South,West,-
+Guest Room,Tertiary ,BedRoom3,Length,10,15,0,1,0,1,1,2,2,2,0,2,2,0,NorthWest,North,West,-
+Guest Room,Tertiary ,BedRoom3,Width,10,15,0,1,0,1,1,2,2,2,0,2,2,0,NorthWest,North,West,-
+Guest Room,Tertiary ,BedRoom3,Area,100,225,0,1,0,1,1,2,2,2,0,2,2,0,NorthWest,North,West,-
+Guest Room,Tertiary ,BedRoom3,Height,9,11,0,1,0,1,1,2,2,2,0,2,2,0,NorthWest,North,West,-
+Formal Living Room ,Primary ,LivingRoom1 ,Length,8,18,0,0,2,2,1,1,1,2,0,2,1,0,NorthEast,North,East,-
+Formal Living Room ,Primary ,LivingRoom1 ,Width,9,25,0,0,2,2,1,1,1,2,0,2,1,0,NorthEast,North,East,-
+Formal Living Room ,Primary ,LivingRoom1 ,Area,72,450,0,0,2,2,1,1,1,2,0,2,1,0,NorthEast,North,East,-
+Formal Living Room ,Primary ,LivingRoom1 ,Height,9,30,0,0,2,2,1,1,1,2,0,2,1,0,NorthEast,North,East,-
+Casual Living Room ,Primary ,LivingRoom2,Length,8,18,0,0,2,2,1,1,1,2,0,2,1,0,NorthEast,North,East,-
+Casual Living Room ,Primary ,LivingRoom2,Width,9,25,0,0,2,2,1,1,1,2,0,2,1,0,NorthEast,North,East,-
+Casual Living Room ,Primary ,LivingRoom2,Area,72,450,0,0,2,2,1,1,1,2,0,2,1,0,NorthEast,North,East,-
+Casual Living Room ,Primary ,LivingRoom2,Height,9,30,0,0,2,2,1,1,1,2,0,2,1,0,NorthEast,North,East,-
+Kitchen,Primary ,Kitchen,Length,8,18,0,0,2,2,1,2,0,2,0,2,1,1,SouthEast,South,East,-
+Kitchen,Primary ,Kitchen,Width,10,25,0,0,2,2,1,2,0,2,0,2,1,1,SouthEast,South,East,-
+Kitchen,Primary ,Kitchen,Area,80,450,0,0,2,2,1,2,0,2,0,2,1,1,SouthEast,South,East,-
+Kitchen,Primary ,Kitchen,Height,9,11,0,0,2,2,1,2,0,2,0,2,1,1,SouthEast,South,East,-
+Dining Room,Primary ,DiningRoom,Length,8,12,0,0,1,2,1,1,0,1,0,2,2,2,NorthWest,North,West,-
+Dining Room,Primary ,DiningRoom,Width,10,15,0,0,1,2,1,1,0,1,0,2,2,2,NorthWest,North,West,-
+Dining Room,Primary ,DiningRoom,Area,80,180,0,0,1,2,1,1,0,1,0,2,2,2,NorthWest,North,West,-
+Dining Room,Primary ,DiningRoom,Height,9,30,0,0,1,2,1,1,0,1,0,2,2,2,NorthWest,North,West,-
+Master Bathroom ,Primary ,BathRoom1,Length,6,15,0,0,0,1,1,0,0,0,1,0,0,0,NorthWest,SouthEast,-,-
+Master Bathroom ,Primary ,BathRoom1,Width,9,15,0,0,0,1,1,0,0,0,1,0,0,0,NorthWest,SouthEast,-,-
+Master Bathroom ,Primary ,BathRoom1,Area,54,225,0,0,0,1,1,0,0,0,1,0,0,0,NorthWest,SouthEast,-,-
+Master Bathroom ,Primary ,BathRoom1,Height,9,11,0,0,0,1,1,0,0,0,1,0,0,0,NorthWest,SouthEast,-,-
+Bathroom ,Primary ,BathRoom2,Length,5,15,0,0,0,1,1,0,0,0,1,0,0,0,SouthWest,NorthWest,SouthEast,-
+Bathroom ,Primary ,BathRoom2,Width,8,15,0,0,0,1,1,0,0,0,1,0,0,0,SouthWest,NorthWest,SouthEast,-
+Bathroom ,Primary ,BathRoom2,Area,40,225,0,0,0,1,1,0,0,0,1,0,0,0,SouthWest,NorthWest,SouthEast,-
+Bathroom ,Primary ,BathRoom2,Height,9,11,0,0,0,1,1,0,0,0,1,0,0,0,SouthWest,NorthWest,SouthEast,-
+Store Room,Secondary ,StoreRoom,Length,4,8,0,0,0,1,2,0,0,0,0,0,1,2,SouthWest,NorthWest,-,-
+Store Room,Secondary ,StoreRoom,Width,5,12,0,0,0,1,2,0,0,0,0,0,1,2,SouthWest,NorthWest,-,-
+Store Room,Secondary ,StoreRoom,Area,20,144,0,0,0,1,2,0,0,0,0,0,1,2,SouthWest,NorthWest,-,-
+Store Room,Secondary ,StoreRoom,Height,9,11,0,0,0,1,2,0,0,0,0,0,1,2,SouthWest,NorthWest,-,-
+Utility Spaces,Secondary ,UtilitySpaces,Length,4,10,0,0,0,1,2,0,0,0,0,0,2,2,NorthEast,North,East,-
+Utility Spaces,Secondary ,UtilitySpaces,Width,5,10,0,0,0,1,2,0,0,0,0,0,2,2,NorthEast,North,East,-
+Utility Spaces,Secondary ,UtilitySpaces,Area,20,100,0,0,0,1,2,0,0,0,0,0,2,2,NorthEast,North,East,-
+Utility Spaces,Secondary ,UtilitySpaces,Height,9,11,0,0,0,1,2,0,0,0,0,0,2,2,NorthEast,North,East,-
+Parking,Secondary ,Parking,Length,15,20,1,0,0,2,0,0,0,0,0,2,0,0,SouthWest,West,South,-
+Parking,Secondary ,Parking,Width,12,25,1,0,0,2,0,0,0,0,0,2,0,0,SouthWest,West,South,-
+Parking,Secondary ,Parking,Area,180,500,1,0,0,2,0,0,0,0,0,2,0,0,SouthWest,West,South,-
+Garage,Tertiary,Garage,Length,15,20,1,0,0,1,2,0,0,0,0,2,2,0,NorthEast,North,East,-
+Garage,Tertiary,Garage,Width,12,25,1,0,0,1,2,0,0,0,0,2,2,0,NorthEast,North,East,-
+Garage,Tertiary,Garage,Area,180,500,1,0,0,1,2,0,0,0,0,2,2,0,NorthEast,North,East,-
+Garage,Tertiary,Garage,Height,9,11,1,0,0,1,2,0,0,0,0,2,2,0,NorthEast,North,East,-
+Garden,Tertiary,Garden,Length,4,15,0,0,0,1,0,2,2,2,0,2,0,0,NorthEast,North,East,-
+Garden,Tertiary,Garden,Width,5,15,0,0,0,1,0,2,2,2,0,2,0,0,NorthEast,North,East,-
+Garden,Tertiary,Garden,Area,20,225,0,0,0,1,0,2,2,2,0,2,0,0,NorthEast,North,East,-
+Closet,Secondary ,Closet,Length,4,10,0,0,0,1,0,0,0,0,0,0,1,0,SouthWest,NorthWest,-,-
+Closet,Secondary ,Closet,Width,5,15,0,0,0,1,0,0,0,0,0,0,1,0,SouthWest,NorthWest,-,-
+Closet,Secondary ,Closet,Area,20,150,0,0,0,1,0,0,0,0,0,0,1,0,SouthWest,NorthWest,-,-
+Closet,Secondary ,Closet,Height,9,11,0,0,0,1,0,0,0,0,0,0,1,0,SouthWest,NorthWest,-,-
+Foyer,Secondary ,Foyer,Length,4,8,0,0,0,1,0,0,0,0,0,0,2,0,NorthEast,North,East,-
+Foyer,Secondary ,Foyer,Width,6,10,0,0,0,1,0,0,0,0,0,0,2,0,NorthEast,North,East,-
+Foyer,Secondary ,Foyer,Area,24,80,0,0,0,1,0,0,0,0,0,0,2,0,NorthEast,North,East,-
+Foyer,Secondary ,Foyer,Height,9,11,0,0,0,1,0,0,0,0,0,0,2,0,NorthEast,North,East,-
+Office,Secondary ,Office,Length,8,12,0,0,0,1,1,1,2,1,0,2,2,0,West,SouthWest,North,-
+Office,Secondary ,Office,Width,8,12,0,0,0,1,1,1,2,1,0,2,2,0,West,SouthWest,North,-
+Office,Secondary ,Office,Area,64,144,0,0,0,1,1,1,2,1,0,2,2,0,West,SouthWest,North,-
+Office,Secondary ,Office,Height,9,11,0,0,0,1,1,1,2,1,0,2,2,0,West,SouthWest,North,-
+Library,Secondary ,Library,Length,8,12,0,0,0,1,1,1,2,1,0,2,1,0,NorthEast,North,East,-
+Library,Secondary ,Library,Width,8,12,0,0,0,1,1,1,2,1,0,2,1,0,NorthEast,North,East,-
+Library,Secondary ,Library,Area,64,144,0,0,0,1,1,1,2,1,0,2,1,0,NorthEast,North,East,-
+Library,Secondary ,Library,Height,9,11,0,0,0,1,1,1,2,1,0,2,1,0,NorthEast,North,East,-
+Meditation Yoga Area,Tertiary,Meditation_YogaArea,Length,8,12,0,0,0,1,1,2,2,2,0,1,2,0,NorthEast,North,East,-
+Meditation Yoga Area,Tertiary,Meditation_YogaArea,Width,8,12,0,0,0,1,1,2,2,2,0,1,2,0,NorthEast,North,East,-
+Meditation Yoga Area,Tertiary,Meditation_YogaArea,Area,64,144,0,0,0,1,1,2,2,2,0,1,2,0,NorthEast,North,East,-
+Meditation Yoga Area,Tertiary,Meditation_YogaArea,Height,9,11,0,0,0,1,1,2,2,2,0,1,2,0,NorthEast,North,East,-
+Game Room,Tertiary,Game Room,Length,8,12,0,0,0,1,1,1,2,1,0,2,1,0,SouthEast,South,East,-
+Game Room,Tertiary,Game Room,Width,8,12,0,0,0,1,1,1,2,1,0,2,1,0,SouthEast,South,East,-
+Game Room,Tertiary,Game Room,Area,64,144,0,0,0,1,1,1,2,1,0,2,1,0,SouthEast,South,East,-
+Game Room,Tertiary,Game Room,Height,9,11,0,0,0,1,1,1,2,1,0,2,1,0,SouthEast,South,East,-
+Pantry,Secondary ,Pantry,Length,10,12,0,0,2,2,1,2,0,2,0,2,1,1,SouthEast,South,East,-
+Pantry,Secondary ,Pantry,Width,10,12,0,0,2,2,1,2,0,2,0,2,1,1,SouthEast,South,East,-
+Pantry,Secondary ,Pantry,Area,100,144,0,0,2,2,1,2,0,2,0,2,1,1,SouthEast,South,East,-
+Pantry,Secondary ,Pantry,Height,9,11,0,0,2,2,1,2,0,2,0,2,1,1,SouthEast,South,East,-
+Home Theater,Tertiary,HomeTheater,Length,10,20,0,0,0,1,1,1,0,0,0,0,0,0,SouthEast,South,East,-
+Home Theater,Tertiary,HomeTheater,Width,15,30,0,0,0,1,1,1,0,0,0,0,0,0,SouthEast,South,East,-
+Home Theater,Tertiary,HomeTheater,Area,150,600,0,0,0,1,1,1,0,0,0,0,0,0,SouthEast,South,East,-
+Home Theater,Tertiary,HomeTheater,Height,9,11,0,0,0,1,1,1,0,0,0,0,0,0,SouthEast,South,East,-
+Studio,Tertiary,Studio,Length,10,12,0,0,0,1,1,1,1,1,0,2,1,0,East,West,NorthEast,NorthWest
+Studio,Tertiary,Studio,Width,10,12,0,0,0,1,1,1,1,1,0,2,1,0,East,West,NorthEast,NorthWest
+Studio,Tertiary,Studio,Area,100,144,0,0,0,1,1,1,1,1,0,2,1,0,East,West,NorthEast,NorthWest
+Studio,Tertiary,Studio,Height,9,11,0,0,0,1,1,1,1,1,0,2,1,0,East,West,NorthEast,NorthWest
+Breakfast Area,Secondary ,BreakfastArea,Length,6,12,0,0,2,2,1,1,0,2,0,2,1,1,NorthWest,North,West,-
+Breakfast Area,Secondary ,BreakfastArea,Width,5,12,0,0,2,2,1,1,0,2,0,2,1,1,NorthWest,North,West,-
+Breakfast Area,Secondary ,BreakfastArea,Area,30,144,0,0,2,2,1,1,0,2,0,2,1,1,NorthWest,North,West,-
+Breakfast Area,Secondary ,BreakfastArea,Height,9,11,0,0,2,2,1,1,0,2,0,2,1,1,NorthWest,North,West,-
+BarArea,Secondary ,BarArea,Length,9,12,0,0,2,2,1,1,2,1,0,2,1,1,NorthWest,North,West,-
+BarArea,Secondary ,BarArea,Width,9,12,0,0,2,2,1,1,2,1,0,2,1,1,NorthWest,North,West,-
+BarArea,Secondary ,BarArea,Area,81,144,0,0,2,2,1,1,2,1,0,2,1,1,NorthWest,North,West,-
+BarArea,Secondary ,BarArea,Height,9,11,0,0,2,2,1,1,2,1,0,2,1,1,NorthWest,North,West,-
+Gym,Tertiary,Gym,Length,10,15,0,0,0,0,0,0,0,0,0,0,0,0,SouthWest,South,West,-
+Gym,Tertiary,Gym,Width,10,20,0,0,0,0,0,0,0,0,0,0,0,0,SouthWest,South,West,-
+Gym,Tertiary,Gym,Area,100,300,0,0,0,0,0,0,0,0,0,0,0,0,SouthWest,South,West,-
+Gym,Tertiary,Gym,Height,9,11,0,0,0,0,0,0,0,0,0,0,0,0,SouthWest,South,West,-
+Recreational Space,Secondary ,RecreationalSpace,Length,10,15,0,0,0,1,1,1,2,1,0,2,1,0,NorthEast,North,East,-
+Recreational Space,Secondary ,RecreationalSpace,Width,10,20,0,0,0,1,1,1,2,1,0,2,1,0,NorthEast,North,East,-
+Recreational Space,Secondary ,RecreationalSpace,Area,100,300,0,0,0,1,1,1,2,1,0,2,1,0,NorthEast,North,East,-
+Recreational Space,Secondary ,RecreationalSpace,Height,9,11,0,0,0,1,1,1,2,1,0,2,1,0,NorthEast,North,East,-
+Party Hall,Tertiary,PartyHall,Length,10,15,0,0,1,1,1,1,2,1,0,2,1,0,NorthEast,North,East,-
+Party Hall,Tertiary,PartyHall,Width,10,20,0,0,1,1,1,1,2,1,0,2,1,0,NorthEast,North,East,-
+Party Hall,Tertiary,PartyHall,Area,100,300,0,0,1,1,1,1,2,1,0,2,1,0,NorthEast,North,East,-
+Party Hall,Tertiary,PartyHall,Height,9,11,0,0,1,1,1,1,2,1,0,2,1,0,NorthEast,North,East,-
+Home Spa,Tertiary,HomeSpa,Length,10,12,0,0,0,1,1,1,2,1,0,2,1,0,SouthEast,South,East,-
+Home Spa,Tertiary,HomeSpa,Width,10,12,0,0,0,1,1,1,2,1,0,2,1,0,SouthEast,South,East,-
+Home Spa,Tertiary,HomeSpa,Area,100,144,0,0,0,1,1,1,2,1,0,2,1,0,SouthEast,South,East,-
+Home Spa,Tertiary,HomeSpa,Height,9,11,0,0,0,1,1,1,2,1,0,2,1,0,SouthEast,South,East,-
+Landscaping,Secondary ,Landscaping,Length,10,15,0,0,0,2,1,2,2,0,0,1,0,0,SouthWest,SouthEast,NorthWest,-
+Landscaping,Secondary ,Landscaping,Width,10,20,0,0,0,2,1,2,2,0,0,1,0,0,SouthWest,SouthEast,NorthWest,-
+Landscaping,Secondary ,Landscaping,Area,100,300,0,0,0,2,1,2,2,0,0,1,0,0,SouthWest,SouthEast,NorthWest,-
+Landscaping,Secondary ,Landscaping,Height,9,11,0,0,0,2,1,2,2,0,0,1,0,0,SouthWest,SouthEast,NorthWest,-
+Balcony,Secondary ,Balcony,Length,4,10,0,0,0,1,1,2,2,0,0,2,0,0,South,East,North,West
+Balcony,Secondary ,Balcony,Width,6,18,0,0,0,1,1,2,2,0,0,2,0,0,South,East,North,West
+Balcony,Secondary ,Balcony,Area,24,180,0,0,0,1,1,2,2,0,0,2,0,0,South,East,North,West
+Balcony,Secondary ,Balcony,Height,9,11,0,0,0,1,1,2,2,0,0,2,0,0,South,East,North,West
+Powder Room,Secondary ,PowderRoom,Length,6,10,0,0,0,1,1,0,0,0,1,0,1,0,NorthWest,SouthEast,-,-
+Powder Room,Secondary ,PowderRoom,Width,6,10,0,0,0,1,1,0,0,0,1,0,1,0,NorthWest,SouthEast,-,-
+Powder Room,Secondary ,PowderRoom,Area,36,100,0,0,0,1,1,0,0,0,1,0,1,0,NorthWest,SouthEast,-,-
+Powder Room,Secondary ,PowderRoom,Height,9,11,0,0,0,1,1,0,0,0,1,0,1,0,NorthWest,SouthEast,-,-
+Jacuzzi Area,Secondary ,JacuzziArea,Length,6,10,0,0,0,1,1,0,0,0,1,0,0,0,North,East,West,NorthEast
+Jacuzzi Area,Secondary ,JacuzziArea,Width,6,10,0,0,0,1,1,0,0,0,1,0,0,0,North,East,West,NorthEast
+Jacuzzi Area,Secondary ,JacuzziArea,Area,36,100,0,0,0,1,1,0,0,0,1,0,0,0,North,East,West,NorthEast
+Jacuzzi Area,Secondary ,JacuzziArea,Height,9,11,0,0,0,1,1,0,0,0,1,0,0,0,North,East,West,NorthEast
+OTS,Secondary ,OTS,Length,2,18,0,0,0,0,0,0,0,0,0,0,0,0,South,East,North,West
+OTS,Secondary ,OTS,Width,2,25,0,0,0,0,0,0,0,0,0,0,0,0,South,East,North,West
+OTS,Secondary ,OTS,Area,4,450,0,0,0,0,0,0,0,0,0,0,0,0,South,East,North,West
+Reading Area,Secondary ,ReadingArea,Length,5,8,0,0,0,1,1,1,2,2,0,2,1,0,NorthEast,North,East,-
+Reading Area,Secondary ,ReadingArea,Width,5,8,0,0,0,1,1,1,2,2,0,2,1,0,NorthEast,North,East,-
+Reading Area,Secondary ,ReadingArea,Area,25,64,0,0,0,1,1,1,2,2,0,2,1,0,NorthEast,North,East,-
+Reading Area,Secondary ,ReadingArea,Height,9,11,0,0,0,1,1,1,2,2,0,2,1,0,NorthEast,North,East,-
+Lift,Secondary ,Lift,Length,4,8,0,0,0,1,0,0,0,0,0,0,0,0,North,SouthEast,South ,East
+Lift,Secondary ,Lift,Width,5,8,0,0,0,1,0,0,0,0,0,0,0,0,North,SouthEast,South ,East
+Lift,Secondary ,Lift,Area,20,64,0,0,0,1,0,0,0,0,0,0,0,0,North,SouthEast,South ,East
+Staircase ,Primary ,Staircase ,Length,6,10,0,0,0,0,0,0,0,0,0,0,0,0,North,South ,-,-
+Staircase ,Primary ,Staircase ,Width,8,15,0,0,0,0,0,0,0,0,0,0,0,0,North,South ,-,-
+Staircase ,Primary ,Staircase ,Area,48,150,0,0,0,0,0,0,0,0,0,0,0,0,North,South ,-,-
+Staircase ,Primary ,Staircase ,Tread,10,12,0,0,0,0,0,0,0,0,0,0,0,0,North,South ,-,-
+Staircase ,Primary ,Staircase ,Riser,5,11,0,0,0,0,0,0,0,0,0,0,0,0,North,South ,-,-
+Lobby ,Secondary ,Lobby ,Length,3,10,0,0,0,2,2,1,1,2,0,2,2,0,,,,
+Lobby ,Secondary ,Lobby ,Width,4,12,0,0,0,2,2,1,1,2,0,2,2,0,,,,
+Lobby ,Secondary ,Lobby ,Area,12,120,0,0,0,2,2,1,1,2,0,2,2,0,,,,
+Lobby ,Secondary ,Lobby ,Height,9,11,0,0,0,2,2,1,1,2,0,2,2,0,,,,
