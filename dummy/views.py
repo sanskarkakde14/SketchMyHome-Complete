@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.generics import CreateAPIView
+from rest_framework import generics
 from rest_framework.views import APIView
 from django.conf import settings
 from subprocess import run, PIPE
@@ -11,7 +12,10 @@ from rest_framework.permissions import IsAuthenticated
 from django.core.files import File
 from urllib.parse import urljoin
 from .serializers import *
-import time
+import time, uuid
+import pandas as pd
+from helper.SiteAnalyzer import main, soil_type
+
 class CreateProjectView(CreateAPIView):
     serializer_class = ProjectSerializer
     permission_classes = [IsAuthenticated]
@@ -131,11 +135,6 @@ class CreateProjectView(CreateAPIView):
 
 
 
-
-
-
-
-
 class PDFListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -163,3 +162,57 @@ class PDFServeView(APIView):
         else:
             print(f"File not found: {file_path}")  # Debug: Log file not found
             return Response({'error': 'File not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+
+
+
+#Palak
+class GenerateMapAndSoilDataView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        latitude = request.data.get('latitude')
+        longitude = request.data.get('longitude')
+
+        if not latitude or not longitude:
+            return Response({'error': 'Latitude and longitude are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Generate a unique filename
+        unique_filename = f'map_{uuid.uuid4().hex}.html'
+        latitude = float(latitude)
+        longitude = float(longitude)
+
+        # Run the external script to generate the map and get soil data
+        map_file_rel_path = main(unique_filename, latitude, longitude)
+        if not map_file_rel_path:
+            return Response({'error': 'Failed to generate map.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Save the map HTML file path in the database
+        map_file = MapFile.objects.create(user=request.user, map_html=map_file_rel_path)
+        map_file_serializer = MapFileSerializer(map_file)
+
+        base_dir = settings.BASE_DIR / 'helper'
+        excel_path = base_dir / 'soil_type.xlsx'    
+        # Fetch and save the soil data
+        soil_data = soil_type(pd.read_excel(excel_path), latitude, longitude).iloc[0]
+        soil_data_instance = SoilData.objects.create(
+            user=request.user,
+            soil_type=soil_data['Soil Type'],
+            ground_water_depth=soil_data['Ground Water Depth'],
+            foundation_type=soil_data['Foundation Type']
+        )
+        soil_data_serializer = SoilDataSerializer(soil_data_instance)
+
+        # Return the serialized data
+        return Response({
+            'map_file': map_file_serializer.data,
+            'soil_data': soil_data_serializer.data
+        }, status=status.HTTP_201_CREATED)
+    
+
+class MapFileListView(generics.ListAPIView):
+    serializer_class = MapFileSerializer
+    permission_classes = [IsAuthenticated]
+    def get_queryset(self):
+        user = self.request.user  # Assuming user is authenticated
+        return MapFile.objects.filter(user=user).order_by('-created_at')
