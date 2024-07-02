@@ -19,6 +19,7 @@ gmaps = googlemaps.Client(key=GOOGLE_MAPS_API_KEY)
 base_dir = settings.BASE_DIR / 'helper'
 excel_path = base_dir / 'soil_type.xlsx'
 img_path = base_dir / 'sitemapanaloverlay.png'
+
 # script_dir = os.path.dirname(os.path.abspath(__file__))
 # excel_path = os.path.join(script_dir, 'soil_type.xlsx')
 
