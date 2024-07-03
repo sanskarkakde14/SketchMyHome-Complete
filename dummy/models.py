@@ -19,13 +19,13 @@ class Project(models.Model):
 
 
 
-class UserPNG(models.Model):
+class UserFile(models.Model):
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
-    image = models.ImageField(upload_to='pngs/')
-    created_at = models.DateTimeField(auto_now_add=True)
-
+    png_image = models.ImageField(upload_to='pngs/',null=True, blank=True)
+    dxf_file = models.FileField(upload_to='dxfs/',null=True, blank=True)
+    avg_value = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     def __str__(self):
-        return f"{self.user.name} - {self.image.name}"
+        return f"UserFile(user={self.user}, png_image={self.png_image}, dxf_file={self.dxf_file})"
     
 
 class SoilData(models.Model):

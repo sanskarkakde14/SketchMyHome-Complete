@@ -4,8 +4,9 @@ from rest_framework.generics import CreateAPIView
 from rest_framework import generics
 from rest_framework.views import APIView
 from django.conf import settings
+from django.core.files.base import ContentFile
 from subprocess import run, PIPE
-from django.http import HttpResponse
+from django.http import HttpResponse,FileResponse
 from pathlib import Path
 import json, os
 from rest_framework.permissions import IsAuthenticated
@@ -39,130 +40,148 @@ class CreateProjectView(CreateAPIView):
 
         json_data = json.dumps(data)
 
-        print(f"Script path: {script_path}")
-        print(f"Data folder: {data_folder}")
-        print(f"JSON data: {json_data}")
-        print(f"Current working directory: {os.getcwd()}")
-        print(f"Files in data folder: {os.listdir(data_folder)}")
-
         result = run(
             ['python', str(script_path), json_data], 
             stdout=PIPE, stderr=PIPE, text=True, cwd=settings.BASE_DIR / 'dummy'
         )
 
-        print(f"Script stdout: {result.stdout}")
-        print(f"Script stderr: {result.stderr}")
-
         if result.returncode == 0:
             output_data = result.stdout.strip()
-            png_filepaths = self.extract_png_filepaths(output_data)
-            if png_filepaths:
+            filepaths = self.extract_filepaths(output_data)
+            avg_values = self.extract_avg_value(output_data)
+            if filepaths and avg_values:
                 try:
-                    self.move_pngs_to_media(png_filepaths, user)
+                    moved_files = self.move_files_to_media(filepaths, user, avg_values)
                     return Response({
-                        'message': 'External script executed successfully and PNGs moved',
-                        'output': result.stdout
+                        'message': 'External script executed successfully and files moved',
+                        'moved_files': moved_files,
+                        'output': result.stdout,
+                        'avg_values': avg_values
                     })
                 except FileNotFoundError as e:
                     return Response({
-                        'message': 'Error moving PNG files',
+                        'message': 'Error moving files',
                         'error': str(e),
-                        'filepaths': png_filepaths
+                        'filepaths': filepaths,
+                        'avg_values': avg_values
                     }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             else:
                 return Response({
-                    'message': 'External script executed successfully but no PNG filenames returned',
-                    'output': result.stdout
+                    'message': 'External script executed successfully but no filenames or AVG values returned',
+                    'output': result.stdout,
+                    'filepaths': filepaths,
+                    'avg_values': avg_values
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        else:
-            return Response({
-                'message': 'Error running external script',
-                'error': result.stderr
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    def extract_png_filepaths(self, output_data):
+    def extract_filepaths(self, output_data):
         try:
-            start = output_data.index('[')
-            end = output_data.index(']') + 1
-            filepaths = json.loads(output_data[start:end].replace("'", '"'))
+            lines = output_data.split('\n')
+            filepaths = []
+            for line in lines:
+                print('line dede pehle wali:',line)
+                if line.startswith("Hello"):
+                    print('line dede sahi wali:',line)
+                    filepath = line.split("Hello", 1)[1].strip()
+                    filepaths.append(filepath)
             print("Extracted filepaths:", filepaths)
             return filepaths
-        except (ValueError, IndexError, json.JSONDecodeError) as e:
+        except Exception as e:
             print(f"Error extracting file paths: {e}")
             print(f"Output data: {output_data}")
             return []
 
-    def move_pngs_to_media(self, dxf_filepaths, user):
-        moved_images = []
-        png_folder = os.path.join(settings.BASE_DIR, 'dummy', 'png')  # Adjust this path as needed
-        
-        print(f"PNG folder: {png_folder}")
-        print(f"Files in PNG folder: {os.listdir(png_folder)}")
+    def move_files_to_media(self, filepaths, user, avg_values):
+        moved_files = []
+        file_pairs = {}
 
-        for dxf_filepath in dxf_filepaths:
-            retry_count = 5
-            delay = 2  # seconds
-
-            # Convert DXF filename to PNG
-            png_filename = os.path.splitext(os.path.basename(dxf_filepath))[0] + '.png'
-            source_path = os.path.join(png_folder, png_filename)
-
-            print(f"Looking for PNG file: {source_path}")
-
-            for attempt in range(retry_count):
-                if os.path.exists(source_path):
-                    destination_path = os.path.join(settings.MEDIA_ROOT, 'pngs', png_filename)
-                    os.makedirs(os.path.dirname(destination_path), exist_ok=True)
-
-                    try:
-                        with open(source_path, 'rb') as f:
-                            django_file = File(f)
-                            user_png = UserPNG(user=user)
-                            user_png.image.save(png_filename, django_file, save=True)
-                        
-                        moved_images.append(png_filename)
-                        print(f"Successfully moved: {png_filename}")
-                        break
-                    except Exception as e:
-                        print(f"Error saving PNG {png_filename}: {str(e)}")
+        for filepath in filepaths:
+            filename = os.path.basename(filepath)
+            name_without_ext = os.path.splitext(filename)[0]
+            
+            if filename.lower().endswith('.png'):
+                if name_without_ext not in file_pairs:
+                    file_pairs[name_without_ext] = {'png': filename}
                 else:
-                    print(f"File not found: {source_path}. Retry {attempt + 1}/{retry_count}")
-                    time.sleep(delay)
-            else:
-                raise FileNotFoundError(f"PNG not found after retries: {source_path}")
+                    file_pairs[name_without_ext]['png'] = filename
+            elif filename.lower().endswith(('.dxf', '.dxftrimmed')):
+                if name_without_ext not in file_pairs:
+                    file_pairs[name_without_ext] = {'dxf': filename}
+                else:
+                    file_pairs[name_without_ext]['dxf'] = filename
+
+        for i, (name, files) in enumerate(file_pairs.items()):
+            try:
+                avg_value = avg_values[i] if i < len(avg_values) else None
+                user_file = UserFile(user=user, avg_value=avg_value)
+                print(f"Saving file pair with AVG value: {avg_value}")
+                if 'png' in files:
+                    self.save_png_file(files['png'], user_file)
+                if 'dxf' in files:
+                    self.save_dxf_file(files['dxf'], user_file)
+                user_file.save()
+                moved_files.extend([files.get('png', ''), files.get('dxf', '')])
+            except FileNotFoundError as e:
+                print(f"Error moving files for {name}: {str(e)}")
         
-        return moved_images         
+        return moved_files
 
+    def save_png_file(self, filename, user_file):
+        source_path = os.path.join(settings.BASE_DIR, 'dummy', 'dxf', 'png', filename)
+        print(f"Looking for PNG file: {source_path}")
 
+        if os.path.exists(source_path):
+            try:
+                with open(source_path, 'rb') as f:
+                    file_content = f.read()
+                django_file = ContentFile(file_content, name=filename)
+                user_file.png_image.save(filename, django_file, save=False)
+                print(f"Successfully added PNG: {filename}")
+            except Exception as e:
+                print(f"Error saving PNG {filename}: {str(e)}")
+        else:
+            raise FileNotFoundError(f"PNG not found: {source_path}")
 
-class PDFListView(APIView):
+    def save_dxf_file(self, filename, user_file):
+        source_path = os.path.join(settings.BASE_DIR, 'dummy', 'dxf', filename)
+        print(f"Looking for DXF file: {source_path}")
+
+        if os.path.exists(source_path):
+            try:
+                with open(source_path, 'rb') as f:
+                    file_content = f.read()
+                django_file = ContentFile(file_content, name=filename)
+                user_file.dxf_file.save(filename, django_file, save=False)
+                print(f"Successfully added DXF: {filename}")
+            except Exception as e:
+                print(f"Error saving DXF {filename}: {str(e)}")
+        else:
+            raise FileNotFoundError(f"DXF file not found: {source_path}")
+    def extract_avg_value(self, output_data):
+        print(f"Full output data: {output_data}")
+        avg_values = []
+        for line in output_data.split('\n'):
+            if "AVG:" in line:
+                print(f"Found AVG line: {line}")
+                try:
+                    avg_str = line.split("AVG:", 1)[1].strip()
+                    avg_value = float(avg_str)
+                    print(f"Extracted AVG value: {avg_value}")
+                    avg_values.append(avg_value)
+                except (IndexError, ValueError) as e:
+                    print(f"Error parsing AVG value from line: {line}. Error: {e}")
+        if not avg_values:
+            print("No valid AVG values found")
+            return None
+        print(f"All extracted AVG values: {avg_values}")
+        return avg_values
+            
+class UserFileListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        user_pdfs = UserPNG.objects.all()
-        serializer = PDFSerializer(user_pdfs, many=True)
+        user_pdfs = UserFile.objects.filter(user=request.user)
+        serializer = UserFileSerializer(user_pdfs, many=True)
         return Response(serializer.data)
-
-class PDFServeView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, filename):
-        pdf_folder = os.path.join(settings.MEDIA_ROOT, 'pdfs')
-        file_path = os.path.join(pdf_folder, filename)
-
-        # Debug: Print the file path
-        print(f"Looking for file at: {file_path}")
-
-        if os.path.exists(file_path):
-            print(f"File found: {file_path}")  # Debug: Confirm file exists
-            with open(file_path, 'rb') as pdf_file:
-                response = HttpResponse(pdf_file.read(), content_type='image/png')
-                response['Content-Disposition'] = f'inline; filename="{filename}"'
-                return response
-        else:
-            print(f"File not found: {file_path}")  # Debug: Log file not found
-            return Response({'error': 'File not found'}, status=status.HTTP_404_NOT_FOUND)
-        
 
 
 
@@ -216,3 +235,5 @@ class MapFileListView(generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user  # Assuming user is authenticated
         return MapFile.objects.filter(user=user).order_by('-created_at')
+    
+

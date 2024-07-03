@@ -261,3 +261,9 @@ def soil_type(df, latitude, longitude):
     return close
 
 
+
+
+
+
+
+

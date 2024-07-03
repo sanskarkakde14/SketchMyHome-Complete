@@ -6,9 +6,9 @@ class ProjectSerializer(serializers.ModelSerializer):
         model = Project
         fields = ['project_name', 'width', 'length', 'bedroom', 'bathroom', 'car', 'temple', 'garden', 'living_room', 'store_room']
         
-class PDFSerializer(serializers.ModelSerializer):
+class UserFileSerializer(serializers.ModelSerializer):
     class Meta:
-        model = UserPNG
+        model = UserFile
         fields = '__all__'
         read_only_fields = ('user',)
 
@@ -21,3 +21,10 @@ class MapFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = MapFile
         fields = ['id', 'user', 'map_html', 'created_at']
+
+
+
+
+
+
+        

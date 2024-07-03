@@ -961,35 +961,52 @@ def create_dxf_from_dataframe(df, output_filename):
         if layer_name not in layers:
             if layer_name == '0':
                 continue
-                #print(f"Creating layer '{layer_name}'")  # Debug print
-                layers[layer_name] = doc.layers.new(name=layer_name)  # Create new layer if it doesn't exist
+            layers[layer_name] = doc.layers.new(name=layer_name)  # Create new layer if it doesn't exist
         
-            msp = doc.modelspace()
-            if row['Type'] == 'LINE':
-                start = (row['X_start'], row['Y_start'])
-                end = (row['X_end'], row['Y_end'])
-                msp.add_line(start, end, dxfattribs={'layer': layer_name})
-            elif row['Type'] == 'CIRCLE':
-                center = (row['X_center'], row['Y_center'])
-                radius = row['Radius']
-                msp.add_circle(center, radius, dxfattribs={'layer': layer_name})
-            elif row['Type'] == 'ARC':
-                center = (row['X_center'], row['Y_center'])
-                radius = row['Radius']
-                start_angle = row['Start Angle']
-                end_angle = row['End Angle']
-                msp.add_arc(center, radius, start_angle, end_angle, dxfattribs={'layer': layer_name})
-            elif row['Type'] == 'TEXT':
-                insert = (row['X_insert'], row['Y_insert'])
-                text = row['Text']
-                msp.add_text(text, dxfattribs={'insert': insert, 'layer': layer_name})
-            elif row['Type'] == 'MTEXT':
-                insert = (row['X_insert'], row['Y_insert'])
-                text = row['Text']
-                msp.add_mtext(text, dxfattribs={'insert': insert, 'layer': layer_name})
+        msp = doc.modelspace()
+        if row['Type'] == 'LINE':
+            start = (row['X_start'], row['Y_start'])
+            end = (row['X_end'], row['Y_end'])
+            msp.add_line(start, end, dxfattribs={'layer': layer_name})
+        elif row['Type'] == 'CIRCLE':
+            center = (row['X_center'], row['Y_center'])
+            radius = row['Radius']
+            msp.add_circle(center, radius, dxfattribs={'layer': layer_name})
+        elif row['Type'] == 'ARC':
+            center = (row['X_center'], row['Y_center'])
+            radius = row['Radius']
+            start_angle = row['Start Angle']
+            end_angle = row['End Angle']
+            msp.add_arc(center, radius, start_angle, end_angle, dxfattribs={'layer': layer_name})
+        elif row['Type'] == 'TEXT':
+            insert = (row['X_insert'], row['Y_insert'])
+            text = row['Text']
+            msp.add_text(text, dxfattribs={'insert': insert, 'layer': layer_name})
+        elif row['Type'] == 'MTEXT':
+            insert = (row['X_insert'], row['Y_insert'])
+            text = row['Text']
+            msp.add_mtext(text, dxfattribs={'insert': insert, 'layer': layer_name})
 
-    doc.saveas(output_filename)
-    return output_filename
+    # Ensure the output directory exists and create if not
+    output_directory = os.path.join(os.path.dirname(output_filename), 'dxf')
+    # os.makedirs(output_directory, exist_ok=True)
+    
+    output_filepath = os.path.join(output_directory, os.path.basename(output_filename))
+    
+    doc.saveas(output_filepath)
+    print("Hello",output_filepath)
+    return output_filepath
+
+
+    # png_folder = os.path.join(os.path.dirname(filename), 'png')
+    # # if not os.path.exists(png_folder):
+    # #     os.makedirs(png_folder)
+    # new_filename = filename.replace('.dxfTrimmed', '.png')
+    # print('new_filename:',new_filename)
+    # png_filepath = os.path.join(png_folder,os.path.basename(new_filename))
+    # print('png_filepath:',png_filepath)
+    # fig.savefig(png_filepath, bbox_inches='tight')
+    # plt.close(fig)
 
 def floor_dist_line_test(df):
     max_along_x = np.round(np.max(np.abs(df['X_end'] - df['X_start'])), 2)
@@ -1303,7 +1320,6 @@ def constrains(filename1):
     
     return result_df1
 
-
 def plot_dxf(filename):
     """
     Plots entities from a DXF file using matplotlib.
@@ -1361,14 +1377,28 @@ def plot_dxf(filename):
 
 
     #API Helper
-    png_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'png')
-    if not os.path.exists(png_folder):
-        os.makedirs(png_folder)
-    
-    png_filename = os.path.join(png_folder, f"{os.path.basename(filename).replace('.dxfTrimmed', '.png')}")
-    fig.savefig(png_filename, bbox_inches='tight')
+    png_folder = os.path.join(os.path.dirname(filename), 'png')
+    # if not os.path.exists(png_folder):
+    #     os.makedirs(png_folder)
+    new_filename = filename.replace('.dxfTrimmed', '.png')
+    print('new_filename:',new_filename)
+    png_filepath = os.path.join(png_folder,os.path.basename(new_filename))
+    print('png_filepath:',png_filepath)
+    fig.savefig(png_filepath, bbox_inches='tight')
     plt.close(fig)
-    return png_filename
+    
+    # output_directory = os.path.join(os.path.dirname(output_filename), 'dxf')
+    # os.makedirs(output_directory, exist_ok=True)
+    
+    # output_filepath = os.path.join(output_directory, os.path.basename(output_filename))
+    
+    # doc.saveas(output_filepath)
+    # print("Hello",output_filepath)
+    # return output_filepathx
+
+
+    print('Hello',png_filepath)
+    return png_filepath
 
 base_dir = settings.BASE_DIR / 'dummy'
 full_path = base_dir / 'MetaData.csv'
@@ -1467,11 +1497,31 @@ for file in Sorted_points:
         # Create a new DXF file from the adjusted DataFrame and add it to the list
     final_filename = file+'Trimmed' 
     create_dxf_from_dataframe(ine3, final_filename)
-    plot_dxf(final_filename)
-    contrains_df = constrains(final_filename)
+    
+    trimmed_dxf_path=settings.BASE_DIR / 'dummy' / 'dxf/'
+    plot_dxf(os.path.join(trimmed_dxf_path,final_filename))
+
+    contrains_df = constrains(os.path.join(trimmed_dxf_path,final_filename))
     area_true_percentage, area_false_percentage = calculate_percentage(contrains_df, 'Condition_Area')
     length_true_percentage, length_false_percentage = calculate_percentage(contrains_df, 'Condition_Length')
     width_true_percentage, width_false_percentage = calculate_percentage(contrains_df, 'Condition_Width')
     avg = (area_true_percentage+length_true_percentage+width_true_percentage)/3
     print(final_filename , ':' , avg)
+    print(f"AVG:{avg}")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
