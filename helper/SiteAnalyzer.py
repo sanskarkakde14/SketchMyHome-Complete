@@ -16,7 +16,7 @@ logging.basicConfig(level=logging.INFO)
 GOOGLE_MAPS_API_KEY = 'AIzaSyA0LAf7WqZMfsePZMHMv8O3tjw9EswXl_g'
 gmaps = googlemaps.Client(key=GOOGLE_MAPS_API_KEY)
 
-base_dir = settings.BASE_DIR / 'helper'
+base_dir = settings.BASE_DIR / 'assets'
 excel_path = base_dir / 'soil_type.xlsx'
 img_path = base_dir / 'sitemapanaloverlay.png'
 

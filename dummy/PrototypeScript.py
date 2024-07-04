@@ -583,9 +583,10 @@ def trim_for_X(df, cut_x1, cut_x2,diff, filename1, filename2, filename3):
                         msp3.delete_entity(line2)
                         break
                      
-    doc1.saveas(filename1)
-    doc2.saveas(filename2)
-    doc3.saveas(filename3)
+    output_folder=settings.BASE_DIR / 'dummy' / 'Cuts&Trims/'                 
+    doc1.saveas(os.path.join(output_folder, filename1))
+    doc2.saveas(os.path.join(output_folder, filename2))
+    doc3.saveas(os.path.join(output_folder, filename3))
 
     
 def add_horizontal_lines_for_Y(df):
@@ -896,10 +897,10 @@ def trim_dxf_for_Y(df, cut_y1, cut_y2,diff, filename1, filename2, filename3):
                         msp1.delete_entity(line1)
                         msp3.delete_entity(line2)
                         break
-                     
-    doc1.saveas(filename1)
-    doc2.saveas(filename2)
-    doc3.saveas(filename3)
+    output_folder=settings.BASE_DIR / 'dummy' / 'Cuts&Trims/'                 
+    doc1.saveas(os.path.join(output_folder, filename1))
+    doc2.saveas(os.path.join(output_folder, filename2))
+    doc3.saveas(os.path.join(output_folder, filename3))
 
 #----------------------------------------------------------------------------------------------------------------------
 
@@ -1180,8 +1181,10 @@ def process_and_aggregate(df):
 def merge_layer_constraints(layer_df: pd.DataFrame, constraints_file: str = 'General Constraints - Sheet1.csv') -> pd.DataFrame:
 
     # Read the constraints data from the specified CSV file
-    constraints_df = pd.read_csv('General Constraints - Sheet1 (1).csv')
-    
+    csv_dir = settings.BASE_DIR / 'assets'
+    csv_path = csv_dir / 'General Constraints - Sheet1 (1).csv'
+    constraints_df = pd.read_csv(csv_path)
+
     # Define aggregation functions for the 'Min Dim' and 'Max Dim' columns
     aggregation_functions = {
         'Min Dim': 'first',
@@ -1375,7 +1378,6 @@ def plot_dxf(filename):
     ax.set_xticks(x_ticks)
     ax.set_yticks(y_ticks)
 
-
     #API Helper
     png_folder = os.path.join(os.path.dirname(filename), 'png')
     # if not os.path.exists(png_folder):
@@ -1386,21 +1388,10 @@ def plot_dxf(filename):
     print('png_filepath:',png_filepath)
     fig.savefig(png_filepath, bbox_inches='tight')
     plt.close(fig)
-    
-    # output_directory = os.path.join(os.path.dirname(output_filename), 'dxf')
-    # os.makedirs(output_directory, exist_ok=True)
-    
-    # output_filepath = os.path.join(output_directory, os.path.basename(output_filename))
-    
-    # doc.saveas(output_filepath)
-    # print("Hello",output_filepath)
-    # return output_filepathx
-
-
     print('Hello',png_filepath)
     return png_filepath
 
-base_dir = settings.BASE_DIR / 'dummy'
+base_dir = settings.BASE_DIR / 'assets'
 full_path = base_dir / 'MetaData.csv'
 print(f"Attempting to read file from: {full_path}")
 print(f"File exists: {full_path.exists()}")
@@ -1435,12 +1426,6 @@ for file in Sorted_points:
         #print(gap)
         floor[['X_start', 'X_end','X_insert']] = floor[['X_start', 'X_end','X_insert']] - gap
         testing5 = pd.concat([testing5,floor],axis = 0)
-
-
-
-    # for j in testing3.index.unique():
-    #     testing_floor = testing3.loc[j]
-    #     print(testing_floor)
 
     #Calculate the difference in dimensions requested by the user
 

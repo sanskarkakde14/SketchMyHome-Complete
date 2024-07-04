@@ -17,6 +17,7 @@ import time, uuid
 import pandas as pd
 from helper.SiteAnalyzer import main, soil_type
 
+#MasterMind API
 class CreateProjectView(CreateAPIView):
     serializer_class = ProjectSerializer
     permission_classes = [IsAuthenticated]
@@ -78,9 +79,7 @@ class CreateProjectView(CreateAPIView):
             lines = output_data.split('\n')
             filepaths = []
             for line in lines:
-                print('line dede pehle wali:',line)
                 if line.startswith("Hello"):
-                    print('line dede sahi wali:',line)
                     filepath = line.split("Hello", 1)[1].strip()
                     filepaths.append(filepath)
             print("Extracted filepaths:", filepaths)
@@ -156,6 +155,7 @@ class CreateProjectView(CreateAPIView):
                 print(f"Error saving DXF {filename}: {str(e)}")
         else:
             raise FileNotFoundError(f"DXF file not found: {source_path}")
+        
     def extract_avg_value(self, output_data):
         print(f"Full output data: {output_data}")
         avg_values = []
@@ -174,10 +174,10 @@ class CreateProjectView(CreateAPIView):
             return None
         print(f"All extracted AVG values: {avg_values}")
         return avg_values
-            
+
+#FileLister For Frontend            
 class UserFileListView(APIView):
     permission_classes = [IsAuthenticated]
-
     def get(self, request):
         user_pdfs = UserFile.objects.filter(user=request.user)
         serializer = UserFileSerializer(user_pdfs, many=True)
@@ -185,7 +185,7 @@ class UserFileListView(APIView):
 
 
 
-#Palak
+#Site Map Analysis API
 class GenerateMapAndSoilDataView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -228,7 +228,7 @@ class GenerateMapAndSoilDataView(APIView):
             'soil_data': soil_data_serializer.data
         }, status=status.HTTP_201_CREATED)
     
-
+#Site Map Analysis Support API
 class MapFileListView(generics.ListAPIView):
     serializer_class = MapFileSerializer
     permission_classes = [IsAuthenticated]
@@ -236,4 +236,14 @@ class MapFileListView(generics.ListAPIView):
         user = self.request.user  # Assuming user is authenticated
         return MapFile.objects.filter(user=user).order_by('-created_at')
     
+
+
+
+
+
+
+
+
+
+
 
