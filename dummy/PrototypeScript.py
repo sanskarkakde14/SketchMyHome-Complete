@@ -583,10 +583,10 @@ def trim_for_X(df, cut_x1, cut_x2,diff, filename1, filename2, filename3):
                         msp3.delete_entity(line2)
                         break
                      
-    output_folder=settings.BASE_DIR / 'dummy' / 'Cuts&Trims/'                 
-    doc1.saveas(os.path.join(output_folder, filename1))
-    doc2.saveas(os.path.join(output_folder, filename2))
-    doc3.saveas(os.path.join(output_folder, filename3))
+                  
+    doc1.saveas(filename1)
+    doc2.saveas(filename2)
+    doc3.saveas(filename3)
 
     
 def add_horizontal_lines_for_Y(df):
@@ -652,7 +652,7 @@ def add_horizontal_lines_for_Y_updated(df):
 
     # Create a list to store the new lines
     new_lines = []
-
+    
     # Get the bounding box for the 'Staircase' layer
     if 'Staircase' in df['Layer'].values:
         staircase_layer = df[df['Layer'] == 'Staircase']
@@ -897,10 +897,9 @@ def trim_dxf_for_Y(df, cut_y1, cut_y2,diff, filename1, filename2, filename3):
                         msp1.delete_entity(line1)
                         msp3.delete_entity(line2)
                         break
-    output_folder=settings.BASE_DIR / 'dummy' / 'Cuts&Trims/'                 
-    doc1.saveas(os.path.join(output_folder, filename1))
-    doc2.saveas(os.path.join(output_folder, filename2))
-    doc3.saveas(os.path.join(output_folder, filename3))
+    doc1.saveas(filename1)
+    doc2.saveas(filename2)
+    doc3.saveas(filename3)
 
 #----------------------------------------------------------------------------------------------------------------------
 

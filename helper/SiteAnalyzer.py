@@ -61,7 +61,6 @@ def find_nearby_places(map_obj, latitude, longitude, place_types, radius):
         fill_color='blue',
         fill_opacity=0.1
     ).add_to(map_obj)
-    
     colors = {
         "park": "green",
         "shopping_mall": "blue",
@@ -69,7 +68,6 @@ def find_nearby_places(map_obj, latitude, longitude, place_types, radius):
         "hotel": "orange",
         "school": "gray"
     }
-    
     for place_type in place_types:
         print(f"Searching for nearby {place_type}s within {radius} meters...")
         places_result = gmaps.places_nearby(
@@ -77,7 +75,6 @@ def find_nearby_places(map_obj, latitude, longitude, place_types, radius):
             radius=radius,
             type=place_type
         )
-        
         if places_result['status'] == 'OK':
             for place in places_result['results']:
                 place_lat = place['geometry']['location']['lat']
@@ -259,11 +256,4 @@ def soil_type(df, latitude, longitude):
     closest = df.nsmallest(1, 'Distance')
     close = closest[['Soil Type', 'Ground Water Depth', 'Foundation Type']].copy()
     return close
-
-
-
-
-
-
-
 

@@ -144,6 +144,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     # Add other allowed origins if necessary
 ]
+
 # Email configuration
 
 # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

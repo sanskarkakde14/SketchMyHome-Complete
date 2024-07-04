@@ -13,7 +13,6 @@ class Project(models.Model):
     garden = models.IntegerField()
     living_room = models.IntegerField()
     store_room = models.IntegerField()
-
     def __str__(self):
         return self.project_name
 
@@ -34,8 +33,18 @@ class SoilData(models.Model):
     ground_water_depth = models.CharField(max_length=255)
     foundation_type = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
+    def __str__(self):
+        return f"user={self.user}, created_at={self.created_at}"
 
 class MapFile(models.Model):
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
     map_html = models.FileField(upload_to='maps/')
     created_at = models.DateTimeField(auto_now_add=True)
+    def __str__(self):
+        return f"user={self.user}, created_at={self.created_at}), file={self.map_html}"
+    
+
+
+
+
+    

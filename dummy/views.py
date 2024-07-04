@@ -17,7 +17,6 @@ import time, uuid
 import pandas as pd
 from helper.SiteAnalyzer import main, soil_type
 
-#MasterMind API
 class CreateProjectView(CreateAPIView):
     serializer_class = ProjectSerializer
     permission_classes = [IsAuthenticated]
@@ -73,12 +72,20 @@ class CreateProjectView(CreateAPIView):
                     'filepaths': filepaths,
                     'avg_values': avg_values
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        # Fallback response if none of the above conditions are met
+        return Response({
+            'message': 'External script execution failed',
+            'output': result.stdout,
+            'error': result.stderr
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def extract_filepaths(self, output_data):
         try:
             lines = output_data.split('\n')
             filepaths = []
             for line in lines:
+
                 if line.startswith("Hello"):
                     filepath = line.split("Hello", 1)[1].strip()
                     filepaths.append(filepath)
@@ -155,7 +162,6 @@ class CreateProjectView(CreateAPIView):
                 print(f"Error saving DXF {filename}: {str(e)}")
         else:
             raise FileNotFoundError(f"DXF file not found: {source_path}")
-        
     def extract_avg_value(self, output_data):
         print(f"Full output data: {output_data}")
         avg_values = []
@@ -174,10 +180,10 @@ class CreateProjectView(CreateAPIView):
             return None
         print(f"All extracted AVG values: {avg_values}")
         return avg_values
-
-#FileLister For Frontend            
+            
 class UserFileListView(APIView):
     permission_classes = [IsAuthenticated]
+
     def get(self, request):
         user_pdfs = UserFile.objects.filter(user=request.user)
         serializer = UserFileSerializer(user_pdfs, many=True)
@@ -185,7 +191,7 @@ class UserFileListView(APIView):
 
 
 
-#Site Map Analysis API
+#Palak
 class GenerateMapAndSoilDataView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -210,7 +216,7 @@ class GenerateMapAndSoilDataView(APIView):
         map_file = MapFile.objects.create(user=request.user, map_html=map_file_rel_path)
         map_file_serializer = MapFileSerializer(map_file)
 
-        base_dir = settings.BASE_DIR / 'helper'
+        base_dir = settings.BASE_DIR / 'assets'
         excel_path = base_dir / 'soil_type.xlsx'    
         # Fetch and save the soil data
         soil_data = soil_type(pd.read_excel(excel_path), latitude, longitude).iloc[0]
@@ -228,7 +234,7 @@ class GenerateMapAndSoilDataView(APIView):
             'soil_data': soil_data_serializer.data
         }, status=status.HTTP_201_CREATED)
     
-#Site Map Analysis Support API
+
 class MapFileListView(generics.ListAPIView):
     serializer_class = MapFileSerializer
     permission_classes = [IsAuthenticated]
@@ -236,14 +242,4 @@ class MapFileListView(generics.ListAPIView):
         user = self.request.user  # Assuming user is authenticated
         return MapFile.objects.filter(user=user).order_by('-created_at')
     
-
-
-
-
-
-
-
-
-
-
 
