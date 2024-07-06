@@ -9,7 +9,7 @@ class ProjectSerializer(serializers.ModelSerializer):
 class UserFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserFile
-        fields = '__all__'
+        fields = '__all__' 
         read_only_fields = ('user',)
 
 class SoilDataSerializer(serializers.ModelSerializer):

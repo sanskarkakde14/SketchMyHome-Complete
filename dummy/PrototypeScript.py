@@ -6,13 +6,17 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import random
 from matplotlib.backends.backend_pdf import PdfPages
-pd.set_option('display.float_format', '{:.5f}'.format)
+from shapely import MultiLineString, MultiPoint
+from shapely.affinity import scale
+from shapely.geometry import Point, LineString, Polygon
+from shapely.ops import linemerge, unary_union, polygonize
+from scipy.spatial import distance
 import os, sys,json
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder  
 from django.conf import settings
 import django
-
+pd.set_option('display.float_format', '{:.5f}'.format)
 pd.options.mode.copy_on_write = True
 
 project_root = Path(__file__).resolve().parent.parent
@@ -194,7 +198,7 @@ def Dxf_to_DF(filename):
             
         entities_data.append(entity_data)
     
-    return pd.DataFrame(entities_data)
+    return pd.DataFrame(entities_data) 
 
 def adjust_Xstart_ystart(df):
     df_copy = df.copy()  # Create a copy of the original DataFrame
@@ -1079,7 +1083,7 @@ def calculate_length1(start, end):
 def Dxf_to_DF1(filename):
     doc = ezdxf.readfile(filename)
     msp = doc.modelspace()
-    
+
     entities_data = []
     for entity in msp:
         entity_data = {'Type': entity.dxftype(), 'Layer': entity.dxf.layer}
@@ -1322,6 +1326,175 @@ def constrains(filename1):
     
     return result_df1
 
+
+#Carpet Area addons
+
+
+def line_exists(point1, point2, lines):
+    new_line = LineString([point1, point2])
+    for line in lines:
+        if new_line.equals(line):
+            return True
+    return False
+
+def find_pairs_with_shortest_distance(unclosed_points, existing_lines):
+    pairs = []
+    used_indices = set()
+    
+    for i, point1 in enumerate(unclosed_points):
+        if i in used_indices:
+            continue
+        min_dist = float('inf')
+        closest_point_index = None
+        
+        for j, point2 in enumerate(unclosed_points):
+            if i != j and j not in used_indices:
+                dist = distance.euclidean((point1.x, point1.y), (point2.x, point2.y))
+                if dist < min_dist and not line_exists(point1, point2, existing_lines):
+                    min_dist = dist
+                    closest_point_index = j
+                    
+        if closest_point_index is not None:
+            pairs.append((point1, unclosed_points[closest_point_index]))
+            used_indices.add(i)
+            used_indices.add(closest_point_index)
+    
+    return pairs
+
+def area_extraction(dataframe):
+    layers = dataframe['Layer'].unique()
+    layer_dict = {}
+    for idx, layer in enumerate(layers):
+        coord_df = np.round(dataframe[(dataframe['Type'] == 'LINE') & (dataframe['Layer'] == f'{layer}')][['X_start','Y_start','X_end','Y_end']], 4)
+        pts = [[Point(rows['X_start'], rows['Y_start']), Point(rows['X_end'], rows['Y_end'])] for idx, rows in coord_df.iterrows()]
+        ln = [LineString([i[0], i[-1]]) for i in pts]
+        start = [(x, y) for x, y in zip(coord_df['X_start'], coord_df['Y_start'])]
+        end = [(x, y) for x, y in zip(coord_df['X_end'], coord_df['Y_end'])]
+        comb = start + end
+
+        coord_counts = {}
+        for coord in comb:
+            if coord in coord_counts:
+                coord_counts[coord] += 1
+            else:
+                coord_counts[coord] = 1
+
+        unclosed = [val for val, idx in coord_counts.items() if idx == 1]
+        upts = [Point(i[0], i[1]) for i in unclosed]
+
+        imgpts = find_pairs_with_shortest_distance(upts, ln)
+        imgln = [LineString([i[0], i[-1]]) for i in imgpts]
+
+        linestrings = imgln + ln
+
+        merged_lines = linemerge(linestrings)
+
+        if isinstance(merged_lines, LineString):
+            if merged_lines.is_closed and len(merged_lines.coords) >= 30:
+                polygon = Polygon(merged_lines)
+            else:
+                polygon = MultiPoint(merged_lines.coords).convex_hull
+        elif isinstance(merged_lines, MultiLineString):
+            polygon = unary_union(merged_lines)
+            if not isinstance(polygon, Polygon):
+                endpoints = []
+                for line in merged_lines.geoms:
+                    endpoints.extend(line.coords)
+                polygon = MultiPoint(endpoints).convex_hull
+        else:
+            raise TypeError("Unexpected geometry type after merging")
+
+
+        layer_dict[f'{layer}'] = polygon.area/144
+
+    return layer_dict
+
+
+def area_extraction_for_layer(dataframe, layer):
+    coord_df = np.round(dataframe[(dataframe['Type'] == 'LINE') & (dataframe['Layer'] == f'{layer}')][['X_start','Y_start','X_end','Y_end']], 4)
+    pts = [[Point(rows['X_start'], rows['Y_start']), Point(rows['X_end'], rows['Y_end'])] for idx, rows in coord_df.iterrows()]
+    ln = [LineString([i[0], i[-1]]) for i in pts]
+    start = [(x, y) for x, y in zip(coord_df['X_start'], coord_df['Y_start'])]
+    end = [(x, y) for x, y in zip(coord_df['X_end'], coord_df['Y_end'])]
+    comb = start + end
+
+    coord_counts = {}
+    for coord in comb:
+        if coord in coord_counts:
+            coord_counts[coord] += 1
+        else:
+            coord_counts[coord] = 1
+
+    unclosed = [val for val, idx in coord_counts.items() if idx == 1]
+    upts = [Point(i[0], i[1]) for i in unclosed]
+
+    imgpts = find_pairs_with_shortest_distance(upts, ln)
+    imgln = [LineString([i[0], i[-1]]) for i in imgpts]
+
+    linestrings = imgln + ln
+
+    merged_lines = linemerge(linestrings)
+    
+    if isinstance(merged_lines, LineString):
+        if merged_lines.is_closed and len(merged_lines.coords) >= 30:
+            polygon = Polygon(merged_lines)
+        else:
+            polygon = MultiPoint(merged_lines.coords).convex_hull
+    elif isinstance(merged_lines, MultiLineString):
+        polygon = unary_union(merged_lines)
+        if not isinstance(polygon, Polygon):
+            endpoints = []
+            for line in merged_lines.geoms:
+                endpoints.extend(line.coords)
+            polygon = MultiPoint(endpoints).convex_hull
+    else:
+        raise TypeError("Unexpected geometry type after merging")
+    
+    return (polygon.area)/144
+
+
+
+
+def latest_carpet_area(dataframe):
+    area = 0
+
+    not_carpet_layer = ['Parking','Stairscase','FoyerStairs','Boundary','Entrance_Staircase','Setback','0',
+                        'BoundaryWalls','Garden','Foyer','Stairs','FoyerStair','WashArea_Staircase']
+
+    for i in list(dataframe.Layer.unique()):
+        if i not in not_carpet_layer:
+            area += area_extraction_for_layer(dataframe, f'{i}')
+            
+    return area
+
+
+
+
+def latest_build_area(dataframe):
+    area = 0
+
+    not_build_layer = ['Boundary','0','Balcony1','Balcony2','Balcony3','Terrace','Parking','Garden','OTS','Entrance_Staircase','Setback']
+
+    for i in list(dataframe.Layer.unique()):
+        if i not in not_build_layer:
+            area += area_extraction_for_layer(dataframe, f'{i}')
+            
+    return area
+
+
+
+def area_main(dataframe):
+    main_dict = area_extraction(dataframe)
+    to_add = {'Carpet Area': latest_carpet_area(dataframe), 'Build up Area': latest_build_area(dataframe)}
+    main_dict.update(to_add)
+    # area_result = {
+    #     'Carpet Area': latest_carpet_area(dataframe),
+    #     'Build up Area': latest_build_area(dataframe),
+    # }
+    print(f"AREA:{json.dumps(main_dict)}")
+
+    return main_dict
+
 def plot_dxf(filename):
     """
     Plots entities from a DXF file using matplotlib.
@@ -1492,7 +1665,15 @@ for file in Sorted_points:
     avg = (area_true_percentage+length_true_percentage+width_true_percentage)/3
     print(final_filename , ':' , avg)
     print(f"AVG:{avg}")
+    boqs = area_main(ine3)
+    # print(boqs)
 
+
+
+
+
+# temp_df=df = Dxf_to_DF(filename)
+# area_main(temp_df)
 
 
 

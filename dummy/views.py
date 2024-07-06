@@ -49,28 +49,32 @@ class CreateProjectView(CreateAPIView):
             output_data = result.stdout.strip()
             filepaths = self.extract_filepaths(output_data)
             avg_values = self.extract_avg_value(output_data)
+            area_info = self.extract_area_info(output_data)
             if filepaths and avg_values:
                 try:
-                    moved_files = self.move_files_to_media(filepaths, user, avg_values)
+                    moved_files = self.move_files_to_media(filepaths, user, avg_values, area_info)
                     return Response({
                         'message': 'External script executed successfully and files moved',
                         'moved_files': moved_files,
                         'output': result.stdout,
-                        'avg_values': avg_values
+                        'avg_values': avg_values,
+                        'area_info': area_info
                     })
                 except FileNotFoundError as e:
                     return Response({
                         'message': 'Error moving files',
                         'error': str(e),
                         'filepaths': filepaths,
-                        'avg_values': avg_values
+                        'avg_values': avg_values,
+                        'area_info': area_info
                     }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             else:
                 return Response({
                     'message': 'External script executed successfully but no filenames or AVG values returned',
                     'output': result.stdout,
                     'filepaths': filepaths,
-                    'avg_values': avg_values
+                    'avg_values': avg_values,
+                    'area_info': area_info
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
         # Fallback response if none of the above conditions are met
@@ -96,7 +100,7 @@ class CreateProjectView(CreateAPIView):
             print(f"Output data: {output_data}")
             return []
 
-    def move_files_to_media(self, filepaths, user, avg_values):
+    def move_files_to_media(self, filepaths, user, avg_values, area_info):
         moved_files = []
         file_pairs = {}
 
@@ -118,8 +122,8 @@ class CreateProjectView(CreateAPIView):
         for i, (name, files) in enumerate(file_pairs.items()):
             try:
                 avg_value = avg_values[i] if i < len(avg_values) else None
-                user_file = UserFile(user=user, avg_value=avg_value)
-                print(f"Saving file pair with AVG value: {avg_value}")
+                user_file = UserFile(user=user, avg_value=avg_value, area_info=area_info)
+                print(f"Saving file pair with AVG value: {avg_value} and Area info: {area_info}")
                 if 'png' in files:
                     self.save_png_file(files['png'], user_file)
                 if 'dxf' in files:
@@ -180,6 +184,18 @@ class CreateProjectView(CreateAPIView):
             return None
         print(f"All extracted AVG values: {avg_values}")
         return avg_values
+    
+    def extract_area_info(self, output_data):
+        area_info = {}
+        for line in output_data.split('\n'):
+            if line.startswith("AREA:"):
+                try:
+                    area_json = line.split("AREA:", 1)[1].strip()
+                    area_info = json.loads(area_json)
+                    print(f"Extracted area info: {area_info}")
+                except (IndexError, json.JSONDecodeError) as e:
+                    print(f"Error parsing area info from line: {line}. Error: {e}")
+        return area_info
             
 class UserFileListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -191,7 +207,7 @@ class UserFileListView(APIView):
 
 
 
-#Palak
+#SiteMap Analysis Code
 class GenerateMapAndSoilDataView(APIView):
     permission_classes = [IsAuthenticated]
 
