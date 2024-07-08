@@ -1,21 +1,16 @@
 import pandas as pd
 import numpy as np
-import ezdxf
-import math
+import ezdxf,math,os, sys,json, django
 from pathlib import Path
 import matplotlib.pyplot as plt
-import random
-from matplotlib.backends.backend_pdf import PdfPages
 from shapely import MultiLineString, MultiPoint
 from shapely.affinity import scale
 from shapely.geometry import Point, LineString, Polygon
-from shapely.ops import linemerge, unary_union, polygonize
+from shapely.ops import linemerge, unary_union
 from scipy.spatial import distance
-import os, sys,json
 from sklearn.preprocessing import StandardScaler
-from sklearn.preprocessing import OneHotEncoder  
 from django.conf import settings
-import django
+
 pd.set_option('display.float_format', '{:.5f}'.format)
 pd.options.mode.copy_on_write = True
 
@@ -1666,7 +1661,7 @@ for file in Sorted_points:
     print(final_filename , ':' , avg)
     print(f"AVG:{avg}")
     boqs = area_main(ine3)
-    # print(boqs)
+    print(boqs)
 
 
 

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from account.models import *
 from .models import *
+
 class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
@@ -21,10 +22,3 @@ class MapFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = MapFile
         fields = ['id', 'user', 'map_html', 'created_at']
-
-
-
-
-
-
-        
