@@ -10,11 +10,12 @@ from rest_framework.permissions import IsAuthenticated
 from .serializers import *
 import pandas as pd
 from helper.SiteAnalyzer import main, soil_type
+from helper.uuidGenerator import generate_short_uuid
 
 class CreateProjectView(CreateAPIView):
     serializer_class = ProjectSerializer
     permission_classes = [IsAuthenticated]
-
+    
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
@@ -93,24 +94,36 @@ class CreateProjectView(CreateAPIView):
                 user_file.save()
                 moved_files.extend([f for f in files.values() if f])
         return moved_files
+    
+    
 
     def save_file(self, filename, user_file, file_type, subfolder=''):
         if not filename:
-            return False
+            return False, None
         source_path = os.path.join(settings.BASE_DIR, 'dummy', 'dxf', subfolder, filename)
         if not os.path.exists(source_path):
             print(f"File not found: {source_path}")
-            return False
+            return False, None
         try:
             with open(source_path, 'rb') as f:
                 file_content = f.read()
-            django_file = ContentFile(file_content, name=filename)
-            getattr(user_file, file_type).save(filename, django_file, save=False)
-            print(f"Successfully saved {file_type}: {filename}")
-            return True
+            
+            # Generate a short unique ID
+            short_id = generate_short_uuid()
+            
+            # Split the filename and extension
+            name, ext = os.path.splitext(filename)
+            
+            # Create a unique filename with the short ID
+            unique_filename = f"{name}_{short_id}{ext}"
+            
+            django_file = ContentFile(file_content, name=unique_filename)
+            getattr(user_file, file_type).save(unique_filename, django_file, save=False)
+            print(f"Successfully saved {file_type}: {unique_filename}")
+            return True, unique_filename
         except Exception as e:
             print(f"Error saving {file_type} {filename}: {str(e)}")
-            return False
+            return False, None
 
     def error_response(self, message, details=None):
         response = {'message': message}
