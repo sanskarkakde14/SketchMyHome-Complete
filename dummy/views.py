@@ -2,6 +2,7 @@ from rest_framework import status,generics
 from rest_framework.response import Response
 from rest_framework.generics import CreateAPIView
 from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.conf import settings
 from django.core.files.base import ContentFile
 from subprocess import run, PIPE
@@ -11,11 +12,14 @@ from .serializers import *
 import pandas as pd
 from helper.SiteAnalyzer import main, soil_type
 from helper.uuidGenerator import generate_short_uuid
+from drf_yasg.utils import swagger_auto_schema
+
 
 class CreateProjectView(CreateAPIView):
     serializer_class = ProjectSerializer
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    
+    @swagger_auto_schema(request_body=ProjectSerializer)
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
@@ -133,7 +137,8 @@ class CreateProjectView(CreateAPIView):
             
 class UserFileListView(APIView):
     permission_classes = [IsAuthenticated]
-
+    authentication_classes = [JWTAuthentication]
+    # @swagger_auto_schema(request_body=UserFileSerializer)
     def get(self, request):
         user_pdfs = UserFile.objects.filter(user=request.user)
         serializer = UserFileSerializer(user_pdfs, many=True)
@@ -142,8 +147,9 @@ class UserFileListView(APIView):
 
 #SiteMap Analysis Code
 class GenerateMapAndSoilDataView(APIView):
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-
+    @swagger_auto_schema(request_body=MapFileSerializer)
     def post(self, request, *args, **kwargs):
         latitude = request.data.get('latitude')
         longitude = request.data.get('longitude')
@@ -179,8 +185,10 @@ class GenerateMapAndSoilDataView(APIView):
     
 
 class MapFileListView(generics.ListAPIView):
+    authentication_classes = [JWTAuthentication]
     serializer_class = MapFileSerializer
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
+    @swagger_auto_schema(request_body=MapFileSerializer)
     def get_queryset(self):
         user = self.request.user  # Assuming user is authenticated
         return MapFile.objects.filter(user=user).order_by('-created_at')

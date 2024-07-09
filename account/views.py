@@ -4,6 +4,7 @@ from rest_framework.views import APIView
 from account.serializers import SendPasswordResetEmailSerializer, UserChangePasswordSerializer, UserLoginSerializer, UserPasswordResetSerializer, UserProfileSerializer, UserRegistrationSerializer
 from django.contrib.auth import authenticate, logout
 from account.renderers import UserRenderer
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.urls import reverse
 from django.utils.http import urlsafe_base64_encode
@@ -12,6 +13,7 @@ from django.contrib.auth.tokens import default_token_generator
 from rest_framework.permissions import IsAuthenticated
 from .models import User
 from .utils import Util
+from drf_yasg.utils import swagger_auto_schema
 
 # Generate Token Manually
 def get_tokens_for_user(user):
@@ -23,6 +25,7 @@ def get_tokens_for_user(user):
 
 class UserRegistrationView(APIView):
   renderer_classes = [UserRenderer]
+  @swagger_auto_schema(request_body=UserRegistrationSerializer)
   def post(self, request, format=None):
     serializer = UserRegistrationSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
@@ -30,8 +33,10 @@ class UserRegistrationView(APIView):
     token = get_tokens_for_user(user)
     return Response({'token':token, 'msg':'Registration Successful'}, status=status.HTTP_201_CREATED)
 
+
 class UserLoginView(APIView):
   renderer_classes = [UserRenderer]
+  @swagger_auto_schema(request_body=UserLoginSerializer)
   def post(self, request, format=None):
     serializer = UserLoginSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
@@ -47,13 +52,16 @@ class UserLoginView(APIView):
 class UserProfileView(APIView):
   renderer_classes = [UserRenderer]
   permission_classes = [IsAuthenticated]
+  authentication_classes = [JWTAuthentication]
   def get(self, request, format=None):
     serializer = UserProfileSerializer(request.user)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 class UserChangePasswordView(APIView):
   renderer_classes = [UserRenderer]
+  authentication_classes = [JWTAuthentication]
   permission_classes = [IsAuthenticated]
+  @swagger_auto_schema(request_body=UserChangePasswordSerializer)
   def post(self, request, format=None):
     serializer = UserChangePasswordSerializer(data=request.data, context={'user':request.user})
     serializer.is_valid(raise_exception=True)
@@ -85,6 +93,7 @@ class SendPasswordResetEmailView(APIView):
 
 class UserPasswordResetView(APIView):
   renderer_classes = [UserRenderer]
+  @swagger_auto_schema(request_body=UserPasswordResetSerializer)
   def post(self, request, uid, token, format=None):
     serializer = UserPasswordResetSerializer(data=request.data, context={'uid':uid, 'token':token})
     serializer.is_valid(raise_exception=True)
@@ -93,7 +102,7 @@ class UserPasswordResetView(APIView):
 
 class UserLogoutView(APIView):
     permission_classes = [IsAuthenticated]
-
+    authentication_classes = [JWTAuthentication]
     def post(self, request, format=None):
         # Perform logout
         logout(request)
