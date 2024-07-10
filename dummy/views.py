@@ -1,14 +1,12 @@
 from rest_framework import status,generics
 from rest_framework.response import Response
-from rest_framework.generics import CreateAPIView,ListAPIView,RetrieveAPIView
+from rest_framework.generics import CreateAPIView
 from rest_framework.views import APIView
-from django.db.models import Max
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.conf import settings
 from django.core.files.base import ContentFile
 from subprocess import run, PIPE
 import json, os, uuid
-from django.db.models import F
 from rest_framework.permissions import IsAuthenticated
 from .serializers import *
 import pandas as pd
@@ -17,11 +15,10 @@ from helper.uuidGenerator import generate_short_uuid
 from drf_yasg.utils import swagger_auto_schema
 
 
-class CreateProjectView(generics.CreateAPIView):
+class CreateProjectView(CreateAPIView):
     serializer_class = ProjectSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-
     @swagger_auto_schema(request_body=ProjectSerializer)
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -29,8 +26,7 @@ class CreateProjectView(generics.CreateAPIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         self.perform_create(serializer)
         return self.run_external_script(serializer.validated_data, request.user)
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+
     def run_external_script(self, data, user):
         script_path = os.path.join(settings.BASE_DIR, 'dummy', 'PrototypeScript.py')
         if not os.path.exists(script_path):
@@ -40,9 +36,9 @@ class CreateProjectView(generics.CreateAPIView):
         if result.returncode != 0:
             return self.error_response('External script execution failed', result.stderr)
 
-        return self.process_output(result.stdout.strip(), user, data)
+        return self.process_output(result.stdout.strip(), user)
 
-    def process_output(self, output, user, project_data):
+    def process_output(self, output, user):
         files_info = []
         avg_values = []
         area_infos = []
@@ -62,25 +58,17 @@ class CreateProjectView(generics.CreateAPIView):
         if not files_info or not avg_values:
             return self.error_response('No filenames or AVG values returned', output)
         try:
-            project = Project.objects.create(
-                user=user,
-                project_name=project_data['project_name'],
-                width=project_data['width'],
-                length=project_data['length'],
-                bedroom=project_data['bedroom'],
-                bathroom=project_data['bathroom'],
-                car=project_data['car'],
-                temple=project_data['temple'],
-                garden=project_data['garden'],
-                living_room=project_data['living_room'],
-                store_room=project_data['store_room']
-            )
-            moved_files = self.process_files(files_info, user, project, avg_values, area_infos)
-            return self.construct_response(project)
+            moved_files = self.process_files(files_info, user, avg_values, area_infos)
+            return Response({
+                'message': 'External script executed successfully and files moved',
+                'moved_files': moved_files,
+                'avg_values': avg_values,
+                'area_infos': area_infos
+            })
         except FileNotFoundError as e:
             return self.error_response('Error moving files', str(e))
 
-    def process_files(self, files_info, user, project, avg_values, area_infos):
+    def process_files(self, files_info, user, avg_values, area_infos):
         moved_files = []
         file_pairs = {}
         for filepath in files_info:
@@ -101,25 +89,17 @@ class CreateProjectView(generics.CreateAPIView):
             area_info = area_infos[i] if i < len(area_infos) else None
             user_file = UserFile(
                 user=user,
-                project=project,
                 avg_value=avg_value,
                 area_info=area_info
             )
-            png_saved, png_filename = self.save_file(files.get('png'), user_file, 'png_image', subfolder='png')
-            dxf_saved, dxf_filename = self.save_file(files.get('dxf'), user_file, 'dxf_file')
+            png_saved = self.save_file(files.get('png'), user_file, 'png_image', subfolder='png')
+            dxf_saved = self.save_file(files.get('dxf'), user_file, 'dxf_file')
             if png_saved or dxf_saved:
                 user_file.save()
-                moved_files.append({
-                    "id": user_file.id,
-                    "png_name": png_filename,
-                    "dxf_name": dxf_filename,
-                    "png_img": user_file.png_image.url if png_saved else None,
-                    "dxf_file": user_file.dxf_file.url if dxf_saved else None,
-                    "avg_value": user_file.avg_value,
-                    "area_info": user_file.area_info,
-                    "created_at": user_file.created_at
-                })
+                moved_files.extend([f for f in files.values() if f])
         return moved_files
+    
+    
 
     def save_file(self, filename, user_file, file_type, subfolder=''):
         if not filename:
@@ -131,10 +111,16 @@ class CreateProjectView(generics.CreateAPIView):
         try:
             with open(source_path, 'rb') as f:
                 file_content = f.read()
-
+            
+            # Generate a short unique ID
             short_id = generate_short_uuid()
+            
+            # Split the filename and extension
             name, ext = os.path.splitext(filename)
+            
+            # Create a unique filename with the short ID
             unique_filename = f"{name}_{short_id}{ext}"
+            
             django_file = ContentFile(file_content, name=unique_filename)
             getattr(user_file, file_type).save(unique_filename, django_file, save=False)
             print(f"Successfully saved {file_type}: {unique_filename}")
@@ -148,55 +134,17 @@ class CreateProjectView(generics.CreateAPIView):
         if details:
             response['details'] = details
         return Response(response, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    def construct_response(self, project):
-        response_data = {
-            "id": project.id,
-            "project_name": project.project_name,
-            "width": project.width,
-            "length": project.length,
-            "bedroom": project.bedroom,
-            "bathroom": project.bathroom,
-            "car": project.car,
-            "temple": project.temple,
-            "garden": project.garden,
-            "living_room": project.living_room,
-            "store_room": project.store_room,
-            "created_at": project.created_at,
-            "files": [
-                {
-                    "id": user_file.id,
-                    "png_name": os.path.basename(user_file.png_image.name) if user_file.png_image else None,
-                    "dxf_name": os.path.basename(user_file.dxf_file.name) if user_file.dxf_file else None,
-                    "png_img": user_file.png_image.url if user_file.png_image else None,
-                    "dxf_file": user_file.dxf_file.url if user_file.dxf_file else None,
-                    "avg_value": user_file.avg_value,
-                    "area_info": user_file.area_info,
-                    "created_at": user_file.created_at
-                } for user_file in project.files.all()
-            ]
-        }
-        return Response(response_data, status=status.HTTP_201_CREATED)
             
-
-class UserProjectsView(ListAPIView):
-    serializer_class = ProjectSerializer
-    authentication_classes = [JWTAuthentication]
+class UserFileListView(APIView):
     permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        return Project.objects.filter(user=self.request.user).order_by('-created_at')
-
-class ProjectDetailView(RetrieveAPIView):
-    serializer_class = ProjectDetailSerializer
-    queryset = Project.objects.all()
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
-    lookup_url_kwarg = 'project_id'  # Adjust this to match your URL configuration
+    # @swagger_auto_schema(request_body=UserFileSerializer)
+    def get(self, request):
+        user_pdfs = UserFile.objects.filter(user=request.user)
+        serializer = UserFileSerializer(user_pdfs, many=True)
+        return Response(serializer.data)
 
-    def get_queryset(self):
-        return self.queryset.filter(user=self.request.user)
-    
+
 #SiteMap Analysis Code
 class GenerateMapAndSoilDataView(APIView):
     authentication_classes = [JWTAuthentication]
@@ -244,7 +192,3 @@ class MapFileListView(generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user  # Assuming user is authenticated
         return MapFile.objects.filter(user=user).order_by('-created_at')
-    
-
-
-
