@@ -1549,7 +1549,7 @@ def plot_dxf(filename):
     png_folder = os.path.join(os.path.dirname(filename), 'png')
     # if not os.path.exists(png_folder):
     #     os.makedirs(png_folder)
-    new_filename = filename.replace('.dxfTrimmed', '.png')
+    new_filename = filename.replace('.dxf', '.png')
     print('new_filename:',new_filename)
     png_filepath = os.path.join(png_folder,os.path.basename(new_filename))
     print('png_filepath:',png_filepath)
@@ -1647,7 +1647,7 @@ for file in Sorted_points:
         ine3 = pd.concat([ine3,step8])
 #       print(file)
         # Create a new DXF file from the adjusted DataFrame and add it to the list
-    final_filename = file+'Trimmed' 
+    final_filename = 'Trimmed'+file 
     create_dxf_from_dataframe(ine3, final_filename)
     
     trimmed_dxf_path=settings.BASE_DIR / 'dummy' / 'dxf/'
