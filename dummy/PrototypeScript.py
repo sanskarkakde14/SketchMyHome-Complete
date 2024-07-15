@@ -1401,7 +1401,7 @@ def area_extraction(dataframe):
 
 
         layer_dict[f'{layer}'] = polygon.area/144
-
+        
     return layer_dict
 
 
@@ -1482,12 +1482,12 @@ def area_main(dataframe):
     main_dict = area_extraction(dataframe)
     to_add = {'Carpet Area': latest_carpet_area(dataframe), 'Build up Area': latest_build_area(dataframe)}
     main_dict.update(to_add)
-    # area_result = {
-    #     'Carpet Area': latest_carpet_area(dataframe),
-    #     'Build up Area': latest_build_area(dataframe),
-    # }
+    main_dict = {key: round(value, 2) for key, value in main_dict.items()}
+    keys_to_remove = ['Boundary', '0']
+    for key in keys_to_remove:
+        if key in main_dict:
+            del main_dict[key]
     print(f"AREA:{json.dumps(main_dict)}")
-
     return main_dict
 
 def plot_dxf(filename):
@@ -1658,17 +1658,12 @@ for file in Sorted_points:
     length_true_percentage, length_false_percentage = calculate_percentage(contrains_df, 'Condition_Length')
     width_true_percentage, width_false_percentage = calculate_percentage(contrains_df, 'Condition_Width')
     avg = (area_true_percentage+length_true_percentage+width_true_percentage)/3
+    avg = round(avg,2)
     print(final_filename , ':' , avg)
     print(f"AVG:{avg}")
     boqs = area_main(ine3)
     print(boqs)
 
-
-
-
-
-# temp_df=df = Dxf_to_DF(filename)
-# area_main(temp_df)
 
 
 

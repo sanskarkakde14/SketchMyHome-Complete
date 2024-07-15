@@ -25,6 +25,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_cleanup.apps.CleanupConfig',
     'rest_framework',
+    'django_extensions',
+    'storages',
     'corsheaders',
     'account',
     'dummy',
@@ -147,10 +149,10 @@ CORS_ALLOW_HEADERS = [
     'authorization',
     'Access-Control-Allow-Origin',
 ]
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    # Add other allowed origins if necessary
-]
+
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 SWAGGER_SETTINGS = {
     'SECURITY_DEFINITIONS': {
