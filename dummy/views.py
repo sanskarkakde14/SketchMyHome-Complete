@@ -6,14 +6,14 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.conf import settings
 from django.core.files.base import ContentFile
 from subprocess import run, PIPE
-import json, os, uuid
+import json, os, uuid,ast,logging, shutil
 from rest_framework.permissions import IsAuthenticated
 from .serializers import *
 import pandas as pd
 from helper.SiteAnalyzer import main, soil_type
 from helper.uuidGenerator import generate_short_uuid
 from drf_yasg.utils import swagger_auto_schema
-
+logger = logging.getLogger(__name__)
 
 class CreateProjectView(CreateAPIView):
     serializer_class = ProjectSerializer
@@ -39,78 +39,97 @@ class CreateProjectView(CreateAPIView):
         return self.process_output(result.stdout.strip(), user)
 
     def process_output(self, output, user):
-        files_info = []
-        avg_values = []
-        area_infos = []
+        info_data_list = []
         for line in output.split('\n'):
-            if line.startswith("Hello"):
-                files_info.append(line.split("Hello", 1)[1].strip())
-            elif "AVG:" in line:
+            if line.startswith("INFO:"):
                 try:
-                    avg_values.append(float(line.split("AVG:", 1)[1].strip()))
-                except (IndexError, ValueError):
-                    pass
-            elif line.startswith("AREA:"):
-                try:
-                    area_infos.append(json.loads(line.split("AREA:", 1)[1].strip()))
-                except (IndexError, json.JSONDecodeError):
-                    pass
-        if not files_info or not avg_values:
-            return self.error_response('No filenames or AVG values returned', output)
+                    dict_str = line.split("INFO:", 1)[1].strip()
+                    logger.debug(f"Attempting to parse dict: {dict_str}")
+                    info_data = ast.literal_eval(dict_str)
+                    info_data_list.append(info_data)
+                    logger.debug(f"Successfully parsed INFO: {info_data}")
+                except (IndexError, ValueError, SyntaxError) as e:
+                    logger.error(f"Error when parsing INFO line: {line}. Error: {str(e)}")
+        
+        if not info_data_list:
+            return self.error_response('No valid INFO data returned', output)
+        
         try:
-            moved_files = self.process_files(files_info, user, avg_values, area_infos)
+            all_processed_files = []
+            for info_data in info_data_list:
+                processed_files = self.process_files(info_data, user)
+                all_processed_files.extend(processed_files)
+            
             return Response({
-                'message': 'External script executed successfully and files moved',
-                'moved_files': moved_files,
-                'avg_values': avg_values,
-                'area_infos': area_infos
+                'message': 'External script executed successfully and files processed',
+                'processed_files': all_processed_files,
+                'info_data': info_data_list,
             })
         except FileNotFoundError as e:
-            return self.error_response('Error moving files', str(e))
+            return self.error_response('Error processing files', str(e))
 
-    def process_files(self, files_info, user, avg_values, area_infos):
-        moved_files = []
-        file_pairs = {}
-        for filepath in files_info:
-            filename = os.path.basename(filepath)
-            name_without_ext = os.path.splitext(filename)[0]
-            if filename.lower().endswith('.png'):
-                if name_without_ext not in file_pairs:
-                    file_pairs[name_without_ext] = {'png': filename}
-                else:
-                    file_pairs[name_without_ext]['png'] = filename
-            elif filename.lower().endswith(('.dxf', '.dxftrimmed')):
-                if name_without_ext not in file_pairs:
-                    file_pairs[name_without_ext] = {'dxf': filename}
-                else:
-                    file_pairs[name_without_ext]['dxf'] = filename
-        for i, (name, files) in enumerate(file_pairs.items()):
-            avg_value = avg_values[i] if i < len(avg_values) else None
-            area_info = area_infos[i] if i < len(area_infos) else None
+    def process_files(self, info_data, user):
+        processed_files = []
+        for png_filename, floor_data in info_data.items():
             user_file = UserFile(
                 user=user,
-                avg_value=avg_value,
-                area_info=area_info
+                info=floor_data
             )
-            png_saved = self.save_file(files.get('png'), user_file, 'png_image', subfolder='png')
-            dxf_saved = self.save_file(files.get('dxf'), user_file, 'dxf_file')
-            if png_saved or dxf_saved:
+            
+            png_saved, png_name = self.save_file(png_filename, user_file, 'png_image', subfolder='png')
+            
+            dxf_filename = png_filename.replace('.png', '.dxf')
+            dxf_saved, dxf_name = self.save_file(dxf_filename, user_file, 'dxf_file')
+            
+            floor_files_saved = []
+            floor_file_keys = list(floor_data.keys())  # Make a copy of the keys to avoid modification during iteration
+            for floor_file in floor_file_keys:
+                floor_saved, floor_name = self.save_file(floor_file, user_file, 'floor_file', subfolder='png')
+                if floor_saved:
+                    floor_files_saved.append(floor_name)
+            
+            if png_saved or dxf_saved or floor_files_saved:
                 user_file.save()
-                moved_files.extend([f for f in files.values() if f])
-        return moved_files
-    
-    
+                logger.info(f"Saved UserFile: id={user_file.id}, png={png_name}, dxf={dxf_name}, info={user_file.info}")
+                processed_files.append({
+                    'png': png_name,
+                    'dxf': dxf_name,
+                    'floors': floor_files_saved
+                })
+            else:
+                logger.warning(f"Failed to save files for {png_filename}")
+
+        return processed_files
+
+
 
     def save_file(self, filename, user_file, file_type, subfolder=''):
         if not filename:
             return False, None
+        
+        # Define source path
         source_path = os.path.join(settings.BASE_DIR, 'dummy', 'dxf', subfolder, filename)
+        
+        # Determine the target subfolder based on file type
+        if file_type == 'png_image' or file_type == 'floor_file':
+            target_subfolder = 'pngs/'
+        else:
+            target_subfolder = 'dxfs/'
+            
+        # Define target path
+        target_path = os.path.join(settings.MEDIA_ROOT, target_subfolder, filename)
+        
+        # Check if source file exists
         if not os.path.exists(source_path):
-            print(f"File not found: {source_path}")
+            logger.warning(f"File not found: {source_path}")
             return False, None
+
         try:
-            with open(source_path, 'rb') as f:
-                file_content = f.read()
+            # Ensure target directory exists
+            os.makedirs(os.path.dirname(target_path), exist_ok=True)
+            
+            # Move file to target location
+            shutil.move(source_path, target_path)
             
             # Generate a short unique ID
             short_id = generate_short_uuid()
@@ -121,13 +140,32 @@ class CreateProjectView(CreateAPIView):
             # Create a unique filename with the short ID
             unique_filename = f"{name}_{short_id}{ext}"
             
+            # Rename the moved file with the unique filename
+            final_target_path = os.path.join(settings.MEDIA_ROOT, target_subfolder, unique_filename)
+            os.rename(target_path, final_target_path)
+            
+            with open(final_target_path, 'rb') as f:
+                file_content = f.read()
+            
             django_file = ContentFile(file_content, name=unique_filename)
-            getattr(user_file, file_type).save(unique_filename, django_file, save=False)
-            print(f"Successfully saved {file_type}: {unique_filename}")
-            return True, unique_filename
+            
+            if file_type == 'floor_file':
+                floor_file_path = f"{target_subfolder}{unique_filename}"
+                if user_file.info is None:
+                    user_file.info = {}
+                user_file.info[floor_file_path] = user_file.info.pop(filename, {})
+                user_file.save(update_fields=['info'])
+                logger.info(f"Successfully saved {file_type}: {unique_filename}")
+                return True, unique_filename
+            else:
+                getattr(user_file, file_type).save(unique_filename, django_file, save=False)
+                logger.info(f"Successfully saved {file_type}: {unique_filename}")
+                return True, unique_filename
         except Exception as e:
-            print(f"Error saving {file_type} {filename}: {str(e)}")
+            logger.error(f"Error saving {file_type} {filename}: {str(e)}")
             return False, None
+
+
 
     def error_response(self, message, details=None):
         response = {'message': message}

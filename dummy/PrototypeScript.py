@@ -1558,6 +1558,82 @@ def plot_dxf(filename):
     print('Hello',png_filepath)
     return png_filepath
 
+
+def plot_dataframe(df,inmage_name):
+    """
+    Plots entities from a DataFrame using matplotlib.
+
+    Parameters:
+        df (pd.DataFrame): The DataFrame containing the entities to be plotted.
+
+    Returns:
+        None
+    """
+    fig, ax = plt.subplots()
+
+    for _, entity in df.iterrows():
+        if entity['Type'] == 'LINE':
+            start = (entity['X_start'] / 12, entity['Y_start'] / 12)  # Convert inches to feet
+            end = (entity['X_end'] / 12, entity['Y_end'] / 12)  # Convert inches to feet
+            ax.plot([start[0], end[0]], [start[1], end[1]], color='black', linewidth=1)
+        elif entity['Type'] == 'CIRCLE':
+            center = (entity['X_start'] / 12, entity['Y_start'] / 12)  # Assuming center coordinates are in X_start, Y_start
+            radius = entity['Length'] / 12  # Assuming Length column represents radius for circles
+            circle = plt.Circle(center, radius, color='black', fill=False, linewidth=1)
+            ax.add_artist(circle)
+        elif entity['Type'] == 'ARC':
+            center = (entity['X_start'] / 12, entity['Y_start'] / 12)  # Assuming center coordinates are in X_start, Y_start
+            radius = entity['Length'] / 12  # Assuming Length column represents radius for arcs
+            start_angle = math.radians(entity['X_end'])  # Assuming start angle is in X_end
+            end_angle = math.radians(entity['Y_end'])  # Assuming end angle is in Y_end
+            arc = plt.Arc(center, 2 * radius, 2 * radius, 0, math.degrees(start_angle), math.degrees(end_angle), color='black', linewidth=1)
+            ax.add_artist(arc)
+        elif entity['Type'] == 'TEXT':
+            insert = (entity['X_insert'] / 12, entity['Y_insert'] / 12)  # Convert inches to feet
+            text = entity['Text']
+            ax.text(insert[0], insert[1], text, fontsize=4, color='black')
+        elif entity['Type'] == 'MTEXT':
+            insert = (entity['X_insert'] / 12, entity['Y_insert'] / 12)  # Convert inches to feet
+            text = entity['Text']
+            ax.text(insert[0], insert[1], text, fontsize=2, color='black')
+
+    ax.set_aspect('equal', adjustable='box')
+    ax.set_xlabel('X (feet)')
+    ax.set_ylabel('Y (feet)')
+    ax.set_title('Architectural Plan')
+    ax.tick_params(axis='both', direction='inout', which='both')
+
+    # Set x and y axis ticks in feet
+    x_ticks = [i * 10 for i in range(int(ax.get_xlim()[0] / 10), int(ax.get_xlim()[1] / 10) + 1)]
+    y_ticks = [i * 10 for i in range(int(ax.get_ylim()[0] / 10), int(ax.get_ylim()[1] / 10) + 1)]
+    ax.set_xticks(x_ticks)
+    ax.set_yticks(y_ticks)
+    
+    png_folder1 = os.path.join(os.path.dirname(inmage_name), 'dxf','png')    
+    # if not os.path.exists(png_folder1):
+    #     os.makedirs(png_folder1)
+    #new_filename = filename.replace('.dxf', '.png')
+    print('new_filename:',inmage_name)
+    png_filepath1 = os.path.join(png_folder1,inmage_name)
+    print('png_filepath:',png_filepath1)
+    #plt.savefig(png_filepath1, dpi=300)
+    fig.savefig(png_filepath1, bbox_inches='tight')
+    plt.close(fig)
+    print('Hello',png_filepath1)
+    return png_filepath1
+
+
+# png_folder = os.path.join(os.path.dirname(image_name), 'png')
+#     if not os.path.exists(png_folder):
+#         os.makedirs(png_folder)
+        
+#     png_filepath = os.path.join(png_folder, image_name)
+#     fig.savefig(png_filepath, bbox_inches='tight')
+#     plt.close(fig)
+    
+    return png_filepath
+
+
 base_dir = settings.BASE_DIR / 'assets'
 full_path = base_dir / 'MetaData.csv'
 print(f"Attempting to read file from: {full_path}")
@@ -1566,7 +1642,9 @@ print(f"File exists: {full_path.exists()}")
 nearest_neighbors, Sorted_points = Similarity_fuc_main(new_point, str(full_path))
 Sorted_points = Sorted_points.to_list()
 print(Sorted_points)
+
 for file in Sorted_points:
+    
     # Adjust the original DXF file coordinates to the origin (0,0)
     print(file)
     adjust_dxf_coordinates_to00(os.path.join(data_folder, file))
@@ -1595,13 +1673,13 @@ for file in Sorted_points:
         testing5 = pd.concat([testing5,floor],axis = 0)
 
     #Calculate the difference in dimensions requested by the user
-
+    info = {}
     for j in testing4.index.unique():
 #         print(100*'*')
 #         print(j)
         testing_floor = testing4.loc[j]
 #         print(testing_floor)
-
+        
         # Calculate the difference in dimensions requested by the user
         original_x = testing_floor['X_start'].max() - testing_floor['X_start'].min()
 #         print("original_x:" ,original_x)
@@ -1643,26 +1721,34 @@ for file in Sorted_points:
 
         # Multiple trimming operations along Y coordinates
         step8 = Multiple_trim_for_Y(step4)
+        inmage_name = file+'_{}'.format(j)+'.png'
+        plot_dataframe(step8,inmage_name)
+        boq = area_main(step8)
+
+        floor_info = {inmage_name:boq}
+        info.update(floor_info)
         # step8[['X_start','X_end','X_insert']] = step8[['X_start','X_end','X_insert']] + (Gaps[j])/12 
         ine3 = pd.concat([ine3,step8])
-#       print(file)
+
         # Create a new DXF file from the adjusted DataFrame and add it to the list
-    final_filename = 'Trimmed'+file 
+    digit = ''.join([char for char in file if char.isdigit()])
+    final_filename = project_name+'_{}'.format(digit)+'.dxf'
     create_dxf_from_dataframe(ine3, final_filename)
     
     trimmed_dxf_path=settings.BASE_DIR / 'dummy' / 'dxf/'
     plot_dxf(os.path.join(trimmed_dxf_path,final_filename))
-
+    final_json = {final_filename.replace('.dxf','.png'):info}
     contrains_df = constrains(os.path.join(trimmed_dxf_path,final_filename))
     area_true_percentage, area_false_percentage = calculate_percentage(contrains_df, 'Condition_Area')
     length_true_percentage, length_false_percentage = calculate_percentage(contrains_df, 'Condition_Length')
     width_true_percentage, width_false_percentage = calculate_percentage(contrains_df, 'Condition_Width')
     avg = (area_true_percentage+length_true_percentage+width_true_percentage)/3
     avg = round(avg,2)
-    print(final_filename , ':' , avg)
-    print(f"AVG:{avg}")
-    boqs = area_main(ine3)
-    print(boqs)
+    print("INFO:",final_json)
+    # print(final_filename , ':' , avg)
+    # print(f"AVG:{avg}")
+    # boqs = area_main(ine3)
+    # print(boqs)
 
 
 
