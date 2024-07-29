@@ -987,13 +987,13 @@ def create_dxf_from_dataframe(df, output_filename):
             msp.add_mtext(text, dxfattribs={'insert': insert, 'layer': layer_name})
 
     # Ensure the output directory exists and create if not
-    output_directory = os.path.join(os.path.dirname(output_filename), 'dxf')
+    output_directory = os.path.join(settings.MEDIA_ROOT, 'dxfs')
     # os.makedirs(output_directory, exist_ok=True)
     
     output_filepath = os.path.join(output_directory, os.path.basename(output_filename))
     
     doc.saveas(output_filepath)
-    print("Hello",output_filepath)
+    # print("Hello",output_filepath)
     return output_filepath
 
 
@@ -1546,7 +1546,7 @@ def plot_dxf(filename):
     ax.set_yticks(y_ticks)
 
     #API Helper
-    png_folder = os.path.join(os.path.dirname(filename), 'png')
+    png_folder = os.path.join(settings.MEDIA_ROOT, 'pngs')
     # if not os.path.exists(png_folder):
     #     os.makedirs(png_folder)
     new_filename = filename.replace('.dxf', '.png')
@@ -1555,7 +1555,7 @@ def plot_dxf(filename):
     print('png_filepath:',png_filepath)
     fig.savefig(png_filepath, bbox_inches='tight')
     plt.close(fig)
-    print('Hello',png_filepath)
+    # print('Hello',png_filepath)
     return png_filepath
 
 
@@ -1609,7 +1609,7 @@ def plot_dataframe(df,inmage_name):
     ax.set_xticks(x_ticks)
     ax.set_yticks(y_ticks)
     
-    png_folder1 = os.path.join(os.path.dirname(inmage_name), 'dxf','png')    
+    png_folder1 = os.path.join(settings.MEDIA_ROOT,'pngs')    
     # if not os.path.exists(png_folder1):
     #     os.makedirs(png_folder1)
     #new_filename = filename.replace('.dxf', '.png')
@@ -1735,7 +1735,7 @@ for file in Sorted_points:
     final_filename = project_name+'_{}'.format(digit)+'.dxf'
     create_dxf_from_dataframe(ine3, final_filename)
     
-    trimmed_dxf_path=settings.BASE_DIR / 'dummy' / 'dxf/'
+    trimmed_dxf_path=os.path.join(settings.MEDIA_ROOT , 'dxfs')
     plot_dxf(os.path.join(trimmed_dxf_path,final_filename))
     final_json = {final_filename.replace('.dxf','.png'):info}
     contrains_df = constrains(os.path.join(trimmed_dxf_path,final_filename))
