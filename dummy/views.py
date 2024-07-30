@@ -113,11 +113,26 @@ class CreateProjectView(CreateAPIView):
             return False, None
 
         try:
-            unique_filename = filename
+            # Generate a short unique ID
+            short_id = generate_short_uuid()
+            
+            # Split the filename and extension
+            name, ext = os.path.splitext(filename)
+            
+            # Create a unique filename with the short ID
+            unique_filename = f"{name}_{short_id}{ext}"
+            
+            # Define the final path for the file
             final_target_path = os.path.join(settings.MEDIA_ROOT, subfolder, unique_filename)
             
-            if not os.path.exists(final_target_path):
-                os.rename(source_path, final_target_path)
+            # Ensure no name collision (rename if necessary)
+            while os.path.exists(final_target_path):
+                short_id = generate_short_uuid()
+                unique_filename = f"{name}_{short_id}{ext}"
+                final_target_path = os.path.join(settings.MEDIA_ROOT, subfolder, unique_filename)
+            
+            # Rename the file with the unique filename
+            os.rename(source_path, final_target_path)
             
             with open(final_target_path, 'rb') as f:
                 file_content = f.read()
@@ -139,6 +154,7 @@ class CreateProjectView(CreateAPIView):
         except Exception as e:
             logger.error(f"Error saving {file_type} {filename}: {str(e)}")
             return False, None
+
 
     def error_response(self, message, details=None):
         response = {'message': message}
