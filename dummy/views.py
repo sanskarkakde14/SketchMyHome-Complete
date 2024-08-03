@@ -7,9 +7,14 @@ from django.conf import settings
 from django.core.files.base import ContentFile
 from subprocess import run, PIPE
 import json, os, uuid,ast,logging, shutil
+import boto3,re
+from urllib.parse import unquote
+import mimetypes
+from urllib.parse import quote
+from botocore.exceptions import ClientError
 from rest_framework.permissions import IsAuthenticated
 from .serializers import *
-import pandas as pd
+import pandas as pd,base64
 from helper.SiteAnalyzer import main, soil_type
 from helper.uuidGenerator import generate_short_uuid
 from drf_yasg.utils import swagger_auto_schema
@@ -20,7 +25,7 @@ class CreateProjectView(CreateAPIView):
     serializer_class = ProjectSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-
+    
     @swagger_auto_schema(request_body=ProjectSerializer)
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -102,6 +107,8 @@ class CreateProjectView(CreateAPIView):
 
         return processed_files
 
+
+
     def save_file(self, filename, user_file, file_type, subfolder):
         if not filename:
             return False, None
@@ -122,37 +129,58 @@ class CreateProjectView(CreateAPIView):
             # Create a unique filename with the short ID
             unique_filename = f"{name}_{short_id}{ext}"
             
-            # Define the final path for the file
-            final_target_path = os.path.join(settings.MEDIA_ROOT, subfolder, unique_filename)
+            # Define the S3 key (path in the bucket)
+            s3_key = f"media/{subfolder}/{unique_filename}"
             
-            # Ensure no name collision (rename if necessary)
-            while os.path.exists(final_target_path):
-                short_id = generate_short_uuid()
-                unique_filename = f"{name}_{short_id}{ext}"
-                final_target_path = os.path.join(settings.MEDIA_ROOT, subfolder, unique_filename)
+            # Determine the content type
+            content_type, _ = mimetypes.guess_type(filename)
+            if content_type is None:
+                content_type = 'application/octet-stream'
+
+            # Set up the ExtraArgs for S3 upload
+            extra_args = {
+                'ContentType': content_type,
+                'ACL': 'public-read'
+            }
+
+            # Set Content-Disposition based on file type
+            if ext.lower() == '.png':
+                extra_args['ContentDisposition'] = 'inline'
+            elif ext.lower() == '.dxf':
+                extra_args['ContentDisposition'] = f'attachment; filename="{quote(unique_filename)}"'
+
+            # Upload file to S3
+            s3_client = boto3.client('s3',
+                                    aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                                    aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                                    region_name=settings.AWS_S3_REGION_NAME)
             
-            # Rename the file with the unique filename
-            os.rename(source_path, final_target_path)
+            with open(source_path, 'rb') as file:
+                s3_client.upload_fileobj(file, settings.AWS_STORAGE_BUCKET_NAME, s3_key, ExtraArgs=extra_args)
             
-            with open(final_target_path, 'rb') as f:
-                file_content = f.read()
-            
-            django_file = ContentFile(file_content, name=unique_filename)
+            # Generate the S3 URL
+            s3_url = f"{s3_key}"
             
             if file_type == 'floor_file':
-                floor_file_path = f"{subfolder}/{unique_filename}"
                 if user_file.info is None:
                     user_file.info = {}
-                user_file.info[floor_file_path] = user_file.info.pop(filename, {})
+                user_file.info[s3_url] = user_file.info.pop(filename, {})
                 user_file.save(update_fields=['info'])
-                logger.info(f"Successfully saved {file_type}: {unique_filename}")
-                return True, unique_filename
             else:
-                getattr(user_file, file_type).save(unique_filename, django_file, save=False)
-                logger.info(f"Successfully saved {file_type}: {unique_filename}")
-                return True, unique_filename
+                setattr(user_file, file_type, s3_url)
+            
+            logger.info(f"Successfully saved {file_type} to S3: {s3_url}")
+            
+            # Remove the local file after successful S3 upload
+            os.remove(source_path)
+            
+            return True, s3_url
+
+        except ClientError as e:
+            logger.error(f"Error uploading {file_type} {filename} to S3: {str(e)}")
+            return False, None
         except Exception as e:
-            logger.error(f"Error saving {file_type} {filename}: {str(e)}")
+            logger.error(f"Error processing {file_type} {filename}: {str(e)}")
             return False, None
 
 
@@ -162,15 +190,58 @@ class CreateProjectView(CreateAPIView):
             response['details'] = details
         return Response(response, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            
 class UserFileListView(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
-    # @swagger_auto_schema(request_body=UserFileSerializer)
+
     def get(self, request):
-        user_pdfs = UserFile.objects.filter(user=request.user)
-        serializer = UserFileSerializer(user_pdfs, many=True)
-        return Response(serializer.data)
+        user_files = UserFile.objects.filter(user=request.user)
+        serialized_data = []
+
+        for user_file in user_files:
+            file_data = {
+                "id": user_file.id,
+                "png_image": f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{user_file.png_image}",
+                "dxf_file": f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{user_file.dxf_file}",
+                "info": {},
+                "created_at": user_file.created_at,
+                "user": user_file.user.id
+            }
+
+            # Process the info dictionary
+            for key, value in user_file.info.items():
+                full_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{key}"
+                file_data["info"][full_url] = value
+
+            serialized_data.append(file_data)
+
+        return Response(serialized_data)            
+# class UserFileListView(APIView):
+#     permission_classes = [IsAuthenticated]
+#     authentication_classes = [JWTAuthentication]
+
+#     def get(self, request):
+#         user_files = UserFile.objects.filter(user=request.user)
+#         serialized_data = []
+
+#         for user_file in user_files:
+#             file_data = {
+#                 "id": user_file.id,
+#                 "png_image": f"{user_file.png_image}",
+#                 "dxf_file": f"{user_file.dxf_file}",
+#                 "info": {},
+#                 "created_at": user_file.created_at,
+#                 "user": user_file.user.id
+#             }
+
+#             # Process the info dictionary
+#             for key, value in user_file.info.items():
+#                 full_url = f"{key}"
+#                 file_data["info"][full_url] = value
+
+#             serialized_data.append(file_data)
+
+#         return Response(serialized_data)
 
 
 #SiteMap Analysis Code
@@ -205,8 +276,24 @@ class GenerateMapAndSoilDataView(APIView):
         if not map_file_rel_path:
             return Response({'error': 'Failed to generate map.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        # Save the map HTML file path in the database
-        map_file = MapFile.objects.create(user=request.user, map_html=map_file_rel_path)
+        # Define the local file path
+        local_file_path = os.path.join(settings.BASE_DIR, 'media', map_file_rel_path)
+
+        # Upload the file to S3
+        s3_key = f'maps/{unique_filename}'
+        s3_url = self.upload_to_s3(local_file_path, s3_key)
+
+        if not s3_url:
+            return Response({'error': 'Failed to upload map to S3.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        cleaned_url = unquote(s3_url)
+        base_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/"
+        if cleaned_url.count(base_url) > 1:
+            _, _, path = cleaned_url.rpartition(base_url)
+            cleaned_url = f"{base_url}{path}"
+
+        logger.info(f"Cleaned S3 URL before saving: {cleaned_url}")
+        # Save the S3 URL in the database
+        map_file = MapFile.objects.create(user=request.user, map_html=s3_url)
         map_file_serializer = MapFileSerializer(map_file)
 
         base_dir = settings.BASE_DIR / 'assets'
@@ -221,13 +308,48 @@ class GenerateMapAndSoilDataView(APIView):
             foundation_type=soil_data['Foundation Type']
         )
         soil_data_serializer = SoilDataSerializer(soil_data_instance)
-
+        
         # Return the serialized data
-        return Response({
+        response_data = {
             'map_file': map_file_serializer.data,
             'soil_data': soil_data_serializer.data
-        }, status=status.HTTP_201_CREATED)
-    
+        }
+        logger.info(f"Response data: {response_data}")
+
+        return Response(response_data, status=status.HTTP_201_CREATED)
+
+
+    def upload_to_s3(self, file_path, s3_key):
+        s3_client = boto3.client('s3',
+                                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                                region_name=settings.AWS_S3_REGION_NAME)
+
+        try:
+            # Add 'media/' to the s3_key
+            s3_key_with_media = f'media/{s3_key}'
+
+            # Print debug information
+            print(f"Uploading file to S3 with key: {s3_key_with_media}")
+
+            with open(file_path, 'rb') as file:
+                content_type = 'text/html'  # Since this is an HTML file
+
+                s3_client.upload_fileobj(file, settings.AWS_STORAGE_BUCKET_NAME, s3_key_with_media,
+                                        ExtraArgs={'ContentType': content_type})
+            
+            # Generate the correct S3 URL
+            s3_url = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{s3_key_with_media}"
+            
+            print(f"S3 URL: {s3_url}")
+            return s3_url
+        except ClientError as e:
+            logger.error(f"Error uploading file to S3: {e}")
+            return None
+        except Exception as e:
+            logger.error(f"Unexpected error: {e}")
+            return None
+
 
 class MapFileListView(generics.ListAPIView):
     authentication_classes = [JWTAuthentication]

@@ -1,6 +1,6 @@
 from pathlib import Path
 from datetime import timedelta
-import os 
+import os , boto3
 from drf_yasg import openapi
 from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -120,11 +120,21 @@ USE_I18N = True
 
 USE_TZ = True
 
-
+#S3 Settings
+AWS_ACCESS_KEY_ID = 'AKIA47CRXPTMEGABSH2A'
+AWS_SECRET_ACCESS_KEY = '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'
+AWS_STORAGE_BUCKET_NAME = 'smhmediabuck'
+AWS_S3_REGION_NAME = 'ap-southeast-1'
+AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
+AWS_S3_OBJECT_PARAMETERS = {
+    'CacheControl': 'max-age=86400',
+}
 
 STATIC_URL = 'static/'
 STATIC_ROOT=os.path.join(BASE_DIR, 'staticfiles')
-MEDIA_URL = '/media/'
+# MEDIA_LOCATION = 'media'
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -172,6 +182,9 @@ SWAGGER_SETTINGS = {
     },
     'USE_SESSION_AUTH': False,
 }
+
+
+
 # Email configuration
 
 # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -181,4 +194,6 @@ SWAGGER_SETTINGS = {
 # EMAIL_HOST_USER = 'your_email@example.com'
 # EMAIL_HOST_PASSWORD = 'your_email_password'
 # EMAIL_FROM = 'your_default_from_email@example.com'
+
+
 
