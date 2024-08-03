@@ -13,6 +13,7 @@ import pandas as pd
 from helper.SiteAnalyzer import main, soil_type
 from helper.uuidGenerator import generate_short_uuid
 from drf_yasg.utils import swagger_auto_schema
+
 logger = logging.getLogger(__name__)
 
 class CreateProjectView(CreateAPIView):
@@ -36,7 +37,6 @@ class CreateProjectView(CreateAPIView):
                      stdout=PIPE, stderr=PIPE, text=True, cwd=os.path.join(settings.BASE_DIR, 'dummy'))
         if result.returncode != 0:
             return self.error_response('External script execution failed', result.stderr)
-
         return self.process_output(result.stdout.strip(), user)
 
     def process_output(self, output, user):
