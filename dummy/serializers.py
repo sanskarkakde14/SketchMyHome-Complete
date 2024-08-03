@@ -39,7 +39,13 @@ class SoilDataSerializer(serializers.ModelSerializer):
         model = SoilData
         fields = ['id', 'user', 'soil_type', 'ground_water_depth', 'foundation_type', 'created_at']
 
+
 class MapFileSerializer(serializers.ModelSerializer):
+    map_html = serializers.SerializerMethodField()
+
     class Meta:
         model = MapFile
         fields = ['id', 'user', 'map_html', 'created_at']
+
+    def get_map_html(self, obj):
+        return obj.map_url
