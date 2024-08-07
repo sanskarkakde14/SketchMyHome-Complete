@@ -6,8 +6,9 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.conf import settings
 from django.core.files.base import ContentFile
 from subprocess import run, PIPE
-import json, os, uuid,ast,logging, shutil
+import json, os, uuid,ast, shutil
 import boto3,re
+from loguru import logger
 from urllib.parse import unquote
 import mimetypes
 from urllib.parse import quote
@@ -19,7 +20,7 @@ from helper.SiteAnalyzer import main, soil_type
 from helper.uuidGenerator import generate_short_uuid
 from drf_yasg.utils import swagger_auto_schema
 
-logger = logging.getLogger(__name__)
+
 
 class CreateProjectView(CreateAPIView):
     serializer_class = ProjectSerializer
@@ -32,8 +33,16 @@ class CreateProjectView(CreateAPIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         self.perform_create(serializer)
-        return self.run_external_script(serializer.validated_data, request.user)
+        try:
+            response = self.run_external_script(serializer.validated_data, request.user)
+            return response
+        finally:
+            self.delete_processed_files()
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.files_to_delete = []
+        
     def run_external_script(self, data, user):
         script_path = os.path.join(settings.BASE_DIR, 'dummy', 'PrototypeScript.py')
         if not os.path.exists(script_path):
@@ -41,6 +50,7 @@ class CreateProjectView(CreateAPIView):
         result = run(['python', script_path, json.dumps(data)], 
                      stdout=PIPE, stderr=PIPE, text=True, cwd=os.path.join(settings.BASE_DIR, 'dummy'))
         if result.returncode != 0:
+            logger.critical("External script execution failed")
             return self.error_response('External script execution failed', result.stderr)
         return self.process_output(result.stdout.strip(), user)
 
@@ -53,7 +63,7 @@ class CreateProjectView(CreateAPIView):
                     logger.debug(f"Attempting to parse dict: {dict_str}")
                     info_data = ast.literal_eval(dict_str)
                     info_data_list.append(info_data)
-                    logger.debug(f"Successfully parsed INFO: {info_data}")
+                    logger.success(f"Successfully parsed INFO: {info_data}")
                 except (IndexError, ValueError, SyntaxError) as e:
                     logger.error(f"Error when parsing INFO line: {line}. Error: {str(e)}")
         
@@ -103,11 +113,9 @@ class CreateProjectView(CreateAPIView):
                     'floors': floor_files_saved
                 })
             else:
-                logger.warning(f"Failed to save files for {png_filename}")
+                logger.critical(f"Failed to save files for {png_filename}")
 
         return processed_files
-
-
 
     def save_file(self, filename, user_file, file_type, subfolder):
         if not filename:
@@ -166,10 +174,10 @@ class CreateProjectView(CreateAPIView):
             else:
                 setattr(user_file, file_type, s3_url)
             
-            logger.info(f"Successfully saved {file_type} to S3: {s3_url}")
-            
+            logger.success(f"Successfully saved {file_type} to S3: {s3_url}")
+            self.files_to_delete.append(source_path)
             # Remove the local file after successful S3 upload
-            os.remove(source_path)
+            # os.remove(source_path)
             
             return True, s3_url
 
@@ -179,7 +187,14 @@ class CreateProjectView(CreateAPIView):
         except Exception as e:
             logger.error(f"Error processing {file_type} {filename}: {str(e)}")
             return False, None
-
+        
+    def delete_processed_files(self):
+        for file_path in self.files_to_delete:
+            try:
+                os.remove(file_path)
+                logger.info(f"Deleted file: {file_path}")
+            except OSError as e:
+                logger.error(f"Error deleting file {file_path}: {e}")
 
     def error_response(self, message, details=None):
         response = {'message': message}
@@ -245,6 +260,7 @@ class GenerateMapAndSoilDataView(APIView):
         # Run the external script to generate the map and get soil data
         map_file_rel_path = main(unique_filename, latitude, longitude, boundary_coords)
         if not map_file_rel_path:
+            logger.error("Map Generation Task Failed")
             return Response({'error': 'Failed to generate map.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Define the local file path
